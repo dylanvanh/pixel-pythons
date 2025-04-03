@@ -1,18 +1,24 @@
+"use client";
+
 import { MintForm } from "@/components/MintForm";
 import { RecentMints } from "@/components/RecentMints";
 import WalletConnect from "@/components/WalletConnect";
+import { useLaserEyes } from "@omnisat/lasereyes-react";
 
 export default function Home() {
+  const { address } = useLaserEyes();
+
   return (
     <div className="flex flex-col min-h-screen relative">
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-b from-blue-50 to-blue-100">
         <div className="max-w-md w-full mx-auto">          
-          {/* Wallet Connection */}
-          <div className="mb-8 flex justify-end">
-            <WalletConnect />
+          {/* Title and wallet connect when connected */}
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-2xl font-bold">Ordinal Mint</h1>
+            {address && <WalletConnect />}
           </div>
           
-          {/* Original Mint Flow */}
+          {/* Mint Flow */}
           <MintForm />
           <RecentMints />
         </div>

@@ -3,8 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { useMintStore } from "@/store/mintStore";
+import { useLaserEyes } from "@omnisat/lasereyes-react";
+import WalletConnect from "./WalletConnect";
 
 export function MintForm() {
+  const { address } = useLaserEyes();
   const mintStep = useMintStore(state => state.mintStep);
   const isLoading = useMintStore(state => state.isLoading);
   const transactions = useMintStore(state => state.transactions);
@@ -14,18 +17,26 @@ export function MintForm() {
   const resetMintProcess = useMintStore(state => state.resetMintProcess);
 
   const renderStepContent = () => {
-    switch (mintStep) {
-      case "ready":
+    if (mintStep === "ready") {
+      if (!address) {
+        // Not connected - show wallet connect with mint variant
+        return <WalletConnect variant="mint" className="w-full" />;
+      } else {
+        // Connected - show mint button
         return (
           <Button 
             onClick={startMintProcess}
             disabled={isLoading}
-            className="w-full bg-black text-white border-4 border-black font-bold text-2xl py-8 hover:bg-white hover:text-black transition duration-200"
+            className="w-full bg-black text-white border-4 border-black font-bold text-xl py-7 hover:bg-white hover:text-black transition duration-200"
           >
-            MINT
+            {isLoading ? "MINTING..." : "MINT"}
           </Button>
         );
-      
+      }
+    }
+
+    // Handle other mint steps
+    switch (mintStep) {
       case "commit":
         return (
           <div className="space-y-4">

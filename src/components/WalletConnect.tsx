@@ -38,7 +38,12 @@ const WALLETS = [
   { name: "Wizz", provider: WIZZ },
 ];
 
-export default function WalletConnect() {
+interface WalletConnectProps {
+  variant?: 'default' | 'mint';
+  className?: string;
+}
+
+export default function WalletConnect({ variant = 'default', className }: WalletConnectProps) {
   const { connect, disconnect, address } = useLaserEyes();
   const [isOpen, setIsOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -95,15 +100,11 @@ export default function WalletConnect() {
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (open) {
-        setError(""); // Clear error when opening the dialog
-      }
-      setIsOpen(open);
-    }}>
-      {address ? (
-        <div className="inline-flex items-center px-3 py-2 border-2 border-black bg-white neobrutalism-shadow rounded-md gap-2">
+  // Render connected state
+  const renderConnectedState = () => {
+    if (variant === 'default') {
+      return (
+        <div className={cn("inline-flex items-center px-3 py-2 border-2 border-black bg-white neobrutalism-shadow rounded-md gap-2", className)}>
           <div className="flex items-center gap-1.5">
             <WalletIcon 
               walletName={connectedWalletProvider} 
@@ -120,15 +121,44 @@ export default function WalletConnect() {
             × Disconnect
           </button>
         </div>
-      ) : (
+      );
+    }
+
+    // For mint variant, we return null when connected as the mint button should be shown
+    return null;
+  };
+
+  // Render connect button
+  const renderConnectButton = () => {
+    if (variant === 'default') {
+      return (
+        <button className={cn("inline-flex items-center gap-2 px-3 py-2 border-2 border-black bg-black text-white font-medium hover:bg-gray-800 transition-colors neobrutalism-shadow rounded-md", className)}>
+          <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18.5 17.5H5C4.17157 17.5 3.5 16.8284 3.5 16V8C3.5 7.17157 4.17157 6.5 5 6.5H18.5V17.5Z" stroke="currentColor" strokeWidth="2"/>
+            <path d="M18.5 17.5H19C19.8284 17.5 20.5 16.8284 20.5 16V8C20.5 7.17157 19.8284 6.5 19 6.5H18.5V17.5Z" fill="currentColor" stroke="currentColor" strokeWidth="2"/>
+          </svg>
+        </button>
+      );
+    } else if (variant === 'mint') {
+      return (
+        <button className={cn("w-full bg-black text-white border-4 border-black font-bold text-xl py-4 hover:bg-white hover:text-black transition duration-200", className)}>
+          {isConnecting ? "CONNECTING..." : "CONNECT WALLET"}
+        </button>
+      );
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (open) {
+        setError(""); // Clear error when opening the dialog
+      }
+      setIsOpen(open);
+    }}>
+      {address ? renderConnectedState() : (
         <DialogTrigger asChild>
-          <button className="inline-flex items-center gap-2 px-3 py-2 border-2 border-black bg-black text-white font-medium hover:bg-gray-800 transition-colors neobrutalism-shadow rounded-md">
-            <span>{isConnecting ? "Connecting..." : "Connect Wallet"}</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18.5 17.5H5C4.17157 17.5 3.5 16.8284 3.5 16V8C3.5 7.17157 4.17157 6.5 5 6.5H18.5V17.5Z" stroke="currentColor" strokeWidth="2"/>
-              <path d="M18.5 17.5H19C19.8284 17.5 20.5 16.8284 20.5 16V8C20.5 7.17157 19.8284 6.5 19 6.5H18.5V17.5Z" fill="currentColor" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-          </button>
+          {renderConnectButton()}
         </DialogTrigger>
       )}
 
