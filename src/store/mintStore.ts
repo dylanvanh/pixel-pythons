@@ -26,6 +26,8 @@ interface MintState {
   
   // Process flow
   startMintProcess: () => Promise<void>;
+  signCommitTransaction: () => Promise<void>;
+  signRevealTransaction: () => Promise<void>;
   broadcastTransactions: () => Promise<void>;
 }
 
@@ -73,10 +75,17 @@ export const useMintStore = create<MintState>()(
       
       // Process flow
       startMintProcess: async () => {
-        const { setMintStep, setIsLoading, setCommitSigned, setRevealSigned } = get();
+        const { setMintStep, setIsLoading } = get();
         
         setIsLoading(true);
         setMintStep("commit");
+        setIsLoading(false);
+      },
+      
+      signCommitTransaction: async () => {
+        const { setMintStep, setIsLoading, setCommitSigned } = get();
+        
+        setIsLoading(true);
         
         // Simulate waiting for commit signature
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -86,6 +95,13 @@ export const useMintStore = create<MintState>()(
         
         // Move to reveal step
         setMintStep("reveal");
+        setIsLoading(false);
+      },
+      
+      signRevealTransaction: async () => {
+        const { setMintStep, setIsLoading, setRevealSigned } = get();
+        
+        setIsLoading(true);
         
         // Simulate waiting for reveal signature
         await new Promise(resolve => setTimeout(resolve, 1500));

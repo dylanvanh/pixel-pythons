@@ -9,6 +9,8 @@ export function MintForm() {
   const isLoading = useMintStore(state => state.isLoading);
   const transactions = useMintStore(state => state.transactions);
   const startMintProcess = useMintStore(state => state.startMintProcess);
+  const signCommitTransaction = useMintStore(state => state.signCommitTransaction);
+  const signRevealTransaction = useMintStore(state => state.signRevealTransaction);
   const resetMintProcess = useMintStore(state => state.resetMintProcess);
 
   const renderStepContent = () => {
@@ -28,21 +30,23 @@ export function MintForm() {
         return (
           <div className="space-y-4">
             <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Step 1: Sign Commit Transaction</h3>
-              <p className="text-sm mb-2">Please sign the commit transaction...</p>
+              <h3 className="text-lg font-bold mb-2">Step 1: Commit Transaction</h3>
+              <p className="text-sm mb-2">Please sign the commit transaction to proceed.</p>
               <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div className="bg-black h-full w-1/2 animate-pulse"></div>
               </div>
             </div>
             <div className="flex space-x-2">
               <Button 
-                disabled
-                className="flex-1 bg-gray-400 text-white border-4 border-black font-bold text-lg"
+                onClick={signCommitTransaction}
+                disabled={isLoading}
+                className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
-                Waiting for signature...
+                {isLoading ? "Signing..." : "Sign"}
               </Button>
               <Button
                 onClick={resetMintProcess}
+                disabled={isLoading}
                 className="bg-white text-black border-4 border-black hover:bg-gray-100"
               >
                 Reset
@@ -59,21 +63,23 @@ export function MintForm() {
               <p className="text-sm">Ready for next step</p>
             </div>
             <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Step 2: Sign Reveal Transaction</h3>
-              <p className="text-sm mb-2">Please sign the reveal transaction...</p>
+              <h3 className="text-lg font-bold mb-2">Step 2: Reveal Transaction</h3>
+              <p className="text-sm mb-2">Please sign the reveal transaction to finalize the mint.</p>
               <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div className="bg-black h-full w-1/2 animate-pulse"></div>
               </div>
             </div>
             <div className="flex space-x-2">
               <Button 
-                disabled
-                className="flex-1 bg-gray-400 text-white border-4 border-black font-bold text-lg"
+                onClick={signRevealTransaction}
+                disabled={isLoading}
+                className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
-                Waiting for signature...
+                {isLoading ? "Signing..." : "Sign"}
               </Button>
               <Button
                 onClick={resetMintProcess}
+                disabled={isLoading}
                 className="bg-white text-black border-4 border-black hover:bg-gray-100"
               >
                 Reset
