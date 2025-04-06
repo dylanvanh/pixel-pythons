@@ -1,5 +1,5 @@
-import { prepareRevealTx } from "@/lib/bitcoin/reveal-tx";
-import { createRevealParams } from "@/lib/bitcoin/commit-tx";
+import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
+import { createRevealParams } from "@/lib/bitcoin/inscriptions/commit-tx";
 
 export async function POST(request: Request) {
   try {

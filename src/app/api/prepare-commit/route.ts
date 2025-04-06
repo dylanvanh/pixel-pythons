@@ -1,4 +1,4 @@
-import { prepareCommitTx } from "@/lib/bitcoin/commit-tx";
+import { prepareCommitTx } from "@/lib/bitcoin/inscriptions/commit-tx";
 
 export async function POST(request: Request) {
   try {

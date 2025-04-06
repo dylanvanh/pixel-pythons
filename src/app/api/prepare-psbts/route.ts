@@ -1,7 +1,7 @@
-import { prepareCommitTx } from "@/lib/bitcoin/commit-tx";
-import { prepareRevealTx } from "@/lib/bitcoin/reveal-tx";
-import { calculateExpectedTxId } from "@/lib/bitcoin/inscription-utils";
-import { bitcoin } from "@/lib/bitcoin/bitcoin-config";
+import { prepareCommitTx } from "@/lib/bitcoin/inscriptions/commit-tx";
+import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
+import { calculateExpectedTxId } from "@/lib/bitcoin/core/inscription-utils";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 
 export async function POST(request: Request) {
   try {

@@ -1,4 +1,4 @@
-import { bitcoin } from "@/lib/bitcoin/bitcoin-config";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 
 /**
  * Creates an inscription script for ordinals

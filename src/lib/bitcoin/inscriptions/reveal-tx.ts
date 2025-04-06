@@ -1,5 +1,5 @@
-import { bitcoin } from "@/lib/bitcoin/bitcoin-config";
-import { calculateExpectedTxId } from "./inscription-utils";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
+import { calculateExpectedTxId } from "../core/inscription-utils";
 
 /**
  * Interface for reveal transaction preparation result

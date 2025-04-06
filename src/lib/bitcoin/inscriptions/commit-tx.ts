@@ -1,14 +1,14 @@
-import { bitcoin } from "@/lib/bitcoin/bitcoin-config";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import * as secp256k1 from "@bitcoinerlab/secp256k1";
-import { mempoolClient } from "../external/mempool-client";
-import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../constants";
+import { mempoolClient } from "../../external/mempool-client";
+import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../constants";
 import {
   UserWalletInfo,
   estimateCommitFee,
   estimateRevealFee,
   createInscriptionScript,
   hexToBytes,
-} from "./inscription-utils";
+} from "../core/inscription-utils";
 
 /**
  * Interface for commit transaction preparation result
