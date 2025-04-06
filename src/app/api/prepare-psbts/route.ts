@@ -1,4 +1,7 @@
-import { prepareInscriptionPsbts } from "@/lib/bitcoin/prepare-psbts";
+import { prepareCommitTx } from "@/lib/bitcoin/commit-tx";
+import { prepareRevealTx } from "@/lib/bitcoin/reveal-tx";
+import { calculateExpectedTxId } from "@/lib/bitcoin/inscription-utils";
+import { bitcoin } from "@/lib/bitcoin/bitcoin-config";
 
 export async function POST(request: Request) {
   try {
@@ -25,8 +28,8 @@ export async function POST(request: Request) {
       paymentPublicKey: paymentPublicKey,
     });
 
-    // Use the provided wallet addresses
-    const response = await prepareInscriptionPsbts(
+    // Prepare the commit transaction
+    const commitResult = await prepareCommitTx(
       paymentAddress,
       ordinalsAddress,
       ordinalsPublicKey,
@@ -35,7 +38,32 @@ export async function POST(request: Request) {
       },
     );
 
-    return Response.json(response);
+    // Calculate expected commit txid for the reveal
+    const commitPsbt = bitcoin.Psbt.fromBase64(commitResult.commitPsbt);
+    const commitTxid = calculateExpectedTxId(commitPsbt);
+
+    // Prepare the reveal transaction using the expected commit txid
+    const revealResult = prepareRevealTx(
+      commitTxid,
+      ordinalsAddress,
+      {
+        taprootRevealScript: commitResult.taprootRevealScript,
+        taprootRevealValue: commitResult.taprootRevealValue,
+        controlBlock: commitResult.controlBlock,
+        inscriptionScript: commitResult.inscriptionScript,
+        postage: commitResult.postage,
+      },
+    );
+
+    // Return both PSBTs and fee information
+    return Response.json({
+      commitPsbt: commitResult.commitPsbt,
+      revealPsbt: revealResult.revealPsbt,
+      commitFee: commitResult.commitFee,
+      revealFee: revealResult.revealFee,
+      totalFee: commitResult.commitFee + revealResult.revealFee,
+      expectedInscriptionId: revealResult.expectedInscriptionId,
+    });
   } catch (error) {
     console.error("Error preparing inscription PSBTs:", error);
     return Response.json(
