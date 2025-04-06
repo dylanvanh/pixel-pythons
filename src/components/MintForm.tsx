@@ -1,59 +1,116 @@
 "use client";
 
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { useMintStore } from "@/store/mintStore";
+import { useAppKitProvider } from "@reown/appkit/react";
+import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
 
 export function MintForm() {
-  const mintStep = useMintStore(state => state.mintStep);
-  const isLoading = useMintStore(state => state.isLoading);
-  const transactions = useMintStore(state => state.transactions);
-  const startMintProcess = useMintStore(state => state.startMintProcess);
-  const signCommitTransaction = useMintStore(state => state.signCommitTransaction);
-  const signRevealTransaction = useMintStore(state => state.signRevealTransaction);
-  const resetMintProcess = useMintStore(state => state.resetMintProcess);
+  const mintStep = useMintStore((state) => state.mintStep);
+  const isLoading = useMintStore((state) => state.isLoading);
+  const transactions = useMintStore((state) => state.transactions);
+  const startMintProcess = useMintStore((state) => state.startMintProcess);
+  const signCommitTransaction = useMintStore(
+    (state) => state.signCommitTransaction,
+  );
+  const signRevealTransaction = useMintStore(
+    (state) => state.signRevealTransaction,
+  );
+  const resetMintProcess = useMintStore((state) => state.resetMintProcess);
+
+  // New state setters for the wallet
+  const setWalletProvider = useMintStore((state) => state.setWalletProvider);
+  const setAddresses = useMintStore((state) => state.setAddresses);
+
+  // Get Bitcoin wallet provider from AppKit
+  const { walletProvider } = useAppKitProvider<BitcoinConnector>("bip122");
+
+  // Initialize wallet and addresses when wallet provider changes
+  useEffect(() => {
+    if (walletProvider) {
+      // Store wallet provider in the state
+      setWalletProvider(walletProvider);
+
+      // Fetch addresses from wallet
+      const fetchAddresses = async () => {
+        try {
+          const accountAddresses = await walletProvider.getAccountAddresses();
+
+          // Find payment and ordinal addresses
+          const paymentAddr = accountAddresses.find(
+            (addr) => addr.purpose === "payment",
+          );
+          const ordinalAddr = accountAddresses.find(
+            (addr) => addr.purpose === "ordinal",
+          );
+
+          if (paymentAddr && ordinalAddr) {
+            // Store addresses in the state
+            setAddresses(paymentAddr.address, ordinalAddr.address);
+          } else {
+            console.error("Could not find required addresses in wallet");
+          }
+        } catch (err) {
+          console.error("Error fetching addresses:", err);
+        }
+      };
+
+      fetchAddresses();
+    } else {
+      // Reset wallet provider when disconnected
+      setWalletProvider(null);
+    }
+  }, [walletProvider, setWalletProvider, setAddresses]);
 
   const renderStepContent = () => {
     switch (mintStep) {
       case "ready":
         return (
-          <Button 
+          <Button
             onClick={startMintProcess}
-            disabled={isLoading}
+            disabled={isLoading || !walletProvider}
             className="w-full bg-black text-white border-4 border-black font-bold text-2xl py-8 hover:bg-white hover:text-black transition duration-200"
           >
-            MINT
+            {!walletProvider ? "CONNECT WALLET" : "MINT"}
           </Button>
         );
-      
+
       case "commit":
         return (
           <div className="space-y-4">
             <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Step 1: Commit Transaction</h3>
-              <p className="text-sm mb-2">Please sign the commit transaction to proceed.</p>
+              <h3 className="text-lg font-bold mb-2">
+                Step 1: Commit Transaction
+              </h3>
+              <p className="text-sm mb-2">
+                Please sign the commit transaction to proceed.
+              </p>
               <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div className="bg-black h-full w-1/2 animate-pulse"></div>
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 onClick={signCommitTransaction}
-                disabled={isLoading}
+                disabled={isLoading || !walletProvider}
                 className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
                 {isLoading ? "Signing..." : "Sign"}
               </Button>
-              {transactions.commitSigned && transactions.commitTxid && !isLoading && (
-                <a 
-                  href={`https://mempool.space/tx/${transactions.commitTxid}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
-                >
-                  View TX
-                </a>
-              )}
+              {transactions.commitSigned &&
+                transactions.commitTxid &&
+                !isLoading && (
+                  <a
+                    href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
+                  >
+                    View TX
+                  </a>
+                )}
               <Button
                 onClick={resetMintProcess}
                 disabled={isLoading}
@@ -64,7 +121,7 @@ export function MintForm() {
             </div>
           </div>
         );
-      
+
       case "reveal":
         return (
           <div className="space-y-4">
@@ -74,48 +131,58 @@ export function MintForm() {
                 <div className="flex items-center">
                   <span className="text-sm font-semibold">Signed ✓</span>
                   {transactions.commitBroadcasted && (
-                    <span className="ml-4 text-sm font-semibold">Broadcasted ✓</span>
+                    <span className="ml-4 text-sm font-semibold">
+                      Broadcasted ✓
+                    </span>
                   )}
                 </div>
-                {transactions.commitSigned && transactions.commitTxid && !isLoading && (
-                  <div className="mt-2">
-                    <a 
-                      href={`https://mempool.space/tx/${transactions.commitTxid}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
-                    >
-                      View transaction
-                    </a>
-                  </div>
-                )}
+                {transactions.commitSigned &&
+                  transactions.commitTxid &&
+                  !isLoading && (
+                    <div className="mt-2">
+                      <a
+                        href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
+                      >
+                        View transaction
+                      </a>
+                    </div>
+                  )}
               </div>
             </div>
             <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Step 2: Reveal Transaction</h3>
-              <p className="text-sm mb-2">Please sign the reveal transaction to finalize the mint.</p>
+              <h3 className="text-lg font-bold mb-2">
+                Step 2: Reveal Transaction
+              </h3>
+              <p className="text-sm mb-2">
+                Please sign the reveal transaction to finalize the mint.
+              </p>
               <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div className="bg-black h-full w-1/2 animate-pulse"></div>
               </div>
             </div>
             <div className="flex space-x-2">
-              <Button 
+              <Button
                 onClick={signRevealTransaction}
-                disabled={isLoading}
+                disabled={isLoading || !walletProvider}
                 className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
                 {isLoading ? "Signing..." : "Sign"}
               </Button>
-              {transactions.revealSigned && transactions.revealTxid && !isLoading && (
-                <a 
-                  href={`https://mempool.space/tx/${transactions.revealTxid}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
-                >
-                  View TX
-                </a>
-              )}
+              {transactions.revealSigned &&
+                transactions.revealTxid &&
+                !isLoading && (
+                  <a
+                    href={`https://mempool.space/tx/${transactions.revealTxid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
+                  >
+                    View TX
+                  </a>
+                )}
               <Button
                 onClick={resetMintProcess}
                 disabled={isLoading}
@@ -126,17 +193,19 @@ export function MintForm() {
             </div>
           </div>
         );
-      
+
       case "success":
         return (
           <div className="space-y-4">
             <div className="p-6 border-4 border-black bg-green-200">
-              <h3 className="text-xl font-bold mb-4 text-center">Mint Successful! 🎉</h3>
-              
+              <h3 className="text-xl font-bold mb-4 text-center">
+                Mint Successful! 🎉
+              </h3>
+
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Commit TX:</span>
-                  <a 
+                  <a
                     href={`https://mempool.space/tx/${transactions.commitTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -145,10 +214,10 @@ export function MintForm() {
                     View
                   </a>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Reveal TX:</span>
-                  <a 
+                  <a
                     href={`https://mempool.space/tx/${transactions.revealTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -159,8 +228,8 @@ export function MintForm() {
                 </div>
               </div>
             </div>
-            
-            <Button 
+
+            <Button
               onClick={resetMintProcess}
               className="w-full bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
             >
@@ -174,19 +243,17 @@ export function MintForm() {
   return (
     <Card className="w-full max-w-md border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0)] transition duration-200">
       {mintStep === "ready" ? (
-        <CardContent className="p-6">
-          {renderStepContent()}
-        </CardContent>
+        <CardContent className="p-6">{renderStepContent()}</CardContent>
       ) : (
         <>
           <CardHeader className="border-b-4 border-black bg-blue-400">
-            <CardTitle className="text-center text-2xl font-bold">Mint Your Ordinal</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold">
+              Mint Your Ordinal
+            </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
-            {renderStepContent()}
-          </CardContent>
+          <CardContent className="p-6">{renderStepContent()}</CardContent>
         </>
       )}
     </Card>
   );
-} 
+}
