@@ -17,4 +17,3 @@ export const networks = [bitcoin] as [AppKitNetwork, ...AppKitNetwork[]];
 export const bitcoinAdapter = new BitcoinAdapter({
   projectId,
 });
-

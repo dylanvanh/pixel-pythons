@@ -1,6 +1,6 @@
 "use client";
 
-import { bitcoinAdapter, projectId, networks } from "@/config";
+import { bitcoinAdapter, projectId, networks } from "@/appkit-config";
 import { createAppKit } from "@reown/appkit/react";
 import React, { type ReactNode } from "react";
 
@@ -38,4 +38,3 @@ function AppKitProvider({ children }: { children: ReactNode }) {
 }
 
 export default AppKitProvider;
-
