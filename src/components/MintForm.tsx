@@ -44,6 +44,16 @@ export function MintForm() {
               >
                 {isLoading ? "Signing..." : "Sign"}
               </Button>
+              {transactions.commitSigned && transactions.commitTxid && !isLoading && (
+                <a 
+                  href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
+                >
+                  View TX
+                </a>
+              )}
               <Button
                 onClick={resetMintProcess}
                 disabled={isLoading}
@@ -59,8 +69,27 @@ export function MintForm() {
         return (
           <div className="space-y-4">
             <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Commit Transaction Signed ✓</h3>
-              <p className="text-sm">Ready for next step</p>
+              <h3 className="text-lg font-bold mb-2">Commit Transaction</h3>
+              <div className="flex flex-col">
+                <div className="flex items-center">
+                  <span className="text-sm font-semibold">Signed ✓</span>
+                  {transactions.commitBroadcasted && (
+                    <span className="ml-4 text-sm font-semibold">Broadcasted ✓</span>
+                  )}
+                </div>
+                {transactions.commitSigned && transactions.commitTxid && !isLoading && (
+                  <div className="mt-2">
+                    <a 
+                      href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
+                    >
+                      View transaction
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="p-4 border-4 border-black bg-white">
               <h3 className="text-lg font-bold mb-2">Step 2: Reveal Transaction</h3>
@@ -77,6 +106,16 @@ export function MintForm() {
               >
                 {isLoading ? "Signing..." : "Sign"}
               </Button>
+              {transactions.revealSigned && transactions.revealTxid && !isLoading && (
+                <a 
+                  href={`https://mempool.space/tx/${transactions.revealTxid}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
+                >
+                  View TX
+                </a>
+              )}
               <Button
                 onClick={resetMintProcess}
                 disabled={isLoading}
@@ -85,25 +124,6 @@ export function MintForm() {
                 Reset
               </Button>
             </div>
-          </div>
-        );
-      
-      case "broadcasting":
-        return (
-          <div className="space-y-4">
-            <div className="p-4 border-4 border-black bg-white">
-              <h3 className="text-lg font-bold mb-2">Both Transactions Signed ✓</h3>
-              <p className="text-sm">Now broadcasting to the Bitcoin network...</p>
-              <div className="w-full bg-gray-200 h-2 mt-4 rounded-full overflow-hidden">
-                <div className="bg-black h-full w-1/2 animate-pulse"></div>
-              </div>
-            </div>
-            <Button 
-              disabled
-              className="w-full bg-gray-400 text-white border-4 border-black font-bold text-lg"
-            >
-              Broadcasting transactions...
-            </Button>
           </div>
         );
       
