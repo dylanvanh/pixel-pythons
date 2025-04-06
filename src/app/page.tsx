@@ -1,9 +1,23 @@
 import { MintForm } from "@/components/MintForm";
 import { RecentMints } from "@/components/RecentMints";
+import { ConnectButton } from "@/components/appkit/ConnectButton";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen relative">
+      <header className="bg-white border-b border-gray-200 py-4 px-6">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-6">
+            <h1 className="text-xl font-bold">Ordinal Mint</h1>
+            <Link href="/psbt-signer" className="font-semibold text-black/80 hover:underline">
+              PSBT Signer
+            </Link>
+          </div>
+          <ConnectButton />
+        </div>
+      </header>
+
       <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-b from-blue-50 to-blue-100">
         <div className="max-w-md w-full mx-auto">
           <MintForm />

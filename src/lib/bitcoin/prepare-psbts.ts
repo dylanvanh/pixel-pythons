@@ -242,6 +242,8 @@ export async function createSimpleTextInscription(
   // Calculate expected commit txid
   const commitTxid = calculateExpectedTxId(commitPsbt);
 
+  console.log("commitTxid", commitTxid);
+
   // Create reveal transaction PSBT
   const revealPsbt = new bitcoin.Psbt();
 
@@ -347,6 +349,8 @@ function estimateRevealFee(contentSize: number, feeRate: number): number {
 
 /**
  * Calculate expected txid from PSBT
+ * NOTE: THIS WILL ONLY WORK FOR ADDRESSES THAT USE *WITNESS*
+ * Should probs be better to wait for broadcast of commmitTx , then pass back commitTxId to create the reveal
  */
 function calculateExpectedTxId(psbt: bitcoin.Psbt): string {
   try {
