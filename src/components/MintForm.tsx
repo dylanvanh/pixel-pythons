@@ -16,8 +16,26 @@ export function MintForm() {
   const resetMintProcess = useMintStore((state) => state.resetMintProcess);
   const setWalletProvider = useMintStore((state) => state.setWalletProvider);
 
-  // Get wallet info from LaserEyes
-  const { address: ordinalAddress, paymentAddress, signPsbt, publicKey, paymentPublicKey } = useLaserEyes();
+  const { address: ordinalAddress, paymentAddress, signPsbt: laserEyesSignPsbt, publicKey, paymentPublicKey } = useLaserEyes();
+
+  const signPsbtWrapper = async (
+    options: { tx: string; finalize?: boolean; broadcast?: boolean; inputsToSign: { index: number; address: string }[] } | string,
+    finalize?: boolean,
+    broadcast?: boolean
+  ): Promise<{ psbt?: string; txId?: string }> => {
+    if (typeof options === 'string') {
+      const response = await laserEyesSignPsbt(options, finalize, broadcast);
+      return {
+        psbt: response?.signedPsbtBase64,
+        txId: response?.txId
+      };
+    }
+    const response = await laserEyesSignPsbt(options);
+    return {
+      psbt: response?.signedPsbtBase64,
+      txId: response?.txId
+    };
+  };
 
   // Initialize wallet when addresses are available
   useEffect(() => {
@@ -25,12 +43,12 @@ export function MintForm() {
       setWalletProvider({ 
         ordinalAddress, 
         paymentAddress,
-        signPsbt,
+        signPsbt: signPsbtWrapper,
         publicKey,
         paymentPublicKey
       });
     }
-  }, [ordinalAddress, paymentAddress, setWalletProvider, signPsbt, publicKey, paymentPublicKey]);
+  }, [ordinalAddress, paymentAddress, setWalletProvider, laserEyesSignPsbt, publicKey, paymentPublicKey]);
 
   const renderStepContent = () => {
     switch (mintStep) {

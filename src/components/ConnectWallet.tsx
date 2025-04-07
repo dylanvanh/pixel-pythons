@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import {
   LEATHER,
@@ -13,15 +14,12 @@ import {
   WIZZ,
   XVERSE,
   SUPPORTED_WALLETS,
-  LaserEyesLogo,
 } from "@omnisat/lasereyes";
 import { Button } from "@/components/ui/button";
-import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -43,41 +41,48 @@ export default function ConnectWallet({ className }: { className?: string }) {
     hasPhantom,
     hasWizz,
     hasOrange,
-    hasOpNet,
   } = useLaserEyes();
   const [isOpen, setIsOpen] = useState(false);
 
-  const hasWallet = {
-    unisat: hasUnisat,
-    xverse: hasXverse,
-    oyl: hasOyl,
+  const walletStatusMap = {
+    [UNISAT]: hasUnisat,
+    [XVERSE]: hasXverse,
+    [OYL]: hasOyl,
     [MAGIC_EDEN]: hasMagicEden,
-    okx: hasOkx,
-    op_net: hasOpNet,
-    leather: hasLeather,
-    phantom: hasPhantom,
-    wizz: hasWizz,
-    orange: hasOrange,
+    [OKX]: hasOkx,
+    [ORANGE]: hasOrange,
+    [LEATHER]: hasLeather,
+    [PHANTOM]: hasPhantom,
+    [WIZZ]: hasWizz,
   };
 
-  const handleConnect = async (
-    walletName:
-      | typeof UNISAT
-      | typeof MAGIC_EDEN
-      | typeof OYL
-      | typeof ORANGE
-      | typeof PHANTOM
-      | typeof LEATHER
-      | typeof XVERSE
-      | typeof WIZZ
-      | typeof OKX,
-  ) => {
+  const handleConnect = async (walletName: string) => {
     if (provider === walletName) {
-      await disconnect();
+      disconnect();
     } else {
       setIsOpen(false);
-      await connect(walletName as never);
+      await connect(
+        walletName as
+          | typeof UNISAT
+          | typeof XVERSE
+          | typeof OYL
+          | typeof MAGIC_EDEN
+          | typeof OKX
+          | typeof ORANGE
+          | typeof LEATHER
+          | typeof PHANTOM
+          | typeof WIZZ,
+      );
     }
+  };
+
+  // Format wallet name for display
+  const formatWalletName = (name: string) => {
+    return name
+      .replace(/[-_]/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
   };
 
   return (
@@ -86,10 +91,9 @@ export default function ConnectWallet({ className }: { className?: string }) {
         <Button
           onClick={() => disconnect()}
           className={cn(
-            "text-black dark:text-white font-bold py-2 px-4 rounded",
-            "transition duration-300",
-            "bg-white dark:bg-gray-800",
-            "hover:bg-gray-900 hover:text-white dark:hover:bg-gray-700",
+            "bg-black text-white border-4 border-black font-bold",
+            "hover:bg-white hover:text-black transition duration-200",
+            "shadow-[4px_4px_0px_0px_rgba(0,0,0)]",
             className,
           )}
         >
@@ -99,10 +103,9 @@ export default function ConnectWallet({ className }: { className?: string }) {
         <DialogTrigger asChild>
           <Button
             className={cn(
-              "text-black dark:text-white font-bold py-2 px-4 rounded",
-              "transition duration-300",
-              "bg-white dark:bg-gray-800",
-              "hover:bg-gray-900 hover:text-white dark:hover:bg-gray-700",
+              "bg-black text-white border-4 border-black font-bold",
+              "hover:bg-white hover:text-black transition duration-200",
+              "shadow-[4px_4px_0px_0px_rgba(0,0,0)]",
               className,
             )}
           >
@@ -112,112 +115,82 @@ export default function ConnectWallet({ className }: { className?: string }) {
       )}
       <DialogContent
         className={cn(
-          "bg-white dark:bg-gray-900 border-none",
-          "text-black dark:text-white rounded-xl mx-auto",
-          "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
+          "bg-white border-4 border-black",
+          "rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0)]",
           "w-[480px] max-h-[560px]",
           "flex flex-col overflow-hidden p-0",
         )}
       >
-        <DialogHeader className="px-6 pt-5 pb-3">
-          <DialogTitle className="text-center text-xl font-medium text-black dark:text-white">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b-4 border-black bg-blue-400">
+          <DialogTitle className="text-center text-2xl font-bold">
             Connect Wallet
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto scrollbar-hide px-6">
-          <DialogDescription className="flex flex-col gap-2 w-full">
-            {Object.values(SUPPORTED_WALLETS).map((wallet) => {
-              const isConnected = provider === wallet;
-              const isMissingWallet = !hasWallet[wallet.name];
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {Object.values(SUPPORTED_WALLETS)
+            .sort((a, b) => {
+              const aInstalled =
+                walletStatusMap[a.name as keyof typeof walletStatusMap];
+              const bInstalled =
+                walletStatusMap[b.name as keyof typeof walletStatusMap];
+
+              // Sort by installation status first
+              if (aInstalled && !bInstalled) return -1;
+              if (!aInstalled && bInstalled) return 1;
+
+              // If both are installed or both are not installed, keep original order
+              return 0;
+            })
+            .map((wallet) => {
+              const isInstalled =
+                walletStatusMap[wallet.name as keyof typeof walletStatusMap];
               return (
-                <Button
+                <button
                   key={wallet.name}
                   onClick={
-                    isMissingWallet
-                      ? () => null
-                      : () => handleConnect(wallet.name)
+                    isInstalled ? () => handleConnect(wallet.name) : undefined
                   }
-                  variant="ghost"
                   className={cn(
-                    "w-full bg-white dark:bg-gray-800",
-                    "hover:bg-gray-50 dark:hover:bg-gray-700",
-                    "text-black dark:text-white",
-                    "font-normal justify-between",
-                    "h-[60px] text-base rounded-xl px-4",
-                    "border border-gray-100 dark:border-gray-700",
-                    "transition-colors duration-200",
-                    "group",
+                    "w-full bg-white py-3 px-4 flex items-center justify-between",
+                    "border-4 border-black rounded-lg",
+                    "transition-all duration-200",
+                    isInstalled
+                      ? "hover:bg-blue-300 hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0)]"
+                      : "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="min-w-[32px] min-h-[32px] w-[32px] h-[32px] flex items-center justify-center">
-                      <WalletIcon
-                        size={32}
-                        walletName={wallet.name}
-                        className="!w-[32px] !h-[32px]"
-                      />
-                    </div>
-                    <span className="text-lg">
-                      {wallet.name
-                        .replace(/[-_]/g, " ")
-                        .split(" ")
-                        .map(
-                          (word) =>
-                            word.charAt(0).toUpperCase() +
-                            word.slice(1).toLowerCase(),
-                        )
-                        .join(" ")}
+                    <WalletIcon walletName={wallet.name} size={32} />
+                    <span className="text-lg font-bold">
+                      {formatWalletName(wallet.name)}
                     </span>
                   </div>
-                  {hasWallet[wallet.name] ? (
-                    <div className="flex items-center">
-                      <div className="flex items-center gap-2 group-hover:hidden">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          Installed
-                        </span>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 hidden group-hover:block" />
-                    </div>
-                  ) : (
+                  {!isInstalled && (
                     <a
                       href={wallet.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-500 hover:text-blue-600"
+                      className="border-2 border-black px-2 py-1 rounded bg-yellow-300 hover:bg-yellow-400 font-bold text-sm"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <ChevronRight className="w-4 h-4" />
-                      <span className="text-sm">Install</span>
+                      Install
                     </a>
                   )}
-                </Button>
+                </button>
               );
             })}
-          </DialogDescription>
         </div>
 
-        <div className="w-full bg-gray-50 dark:bg-gray-900 p-4 pt-5 border-t border-gray-200 dark:border-gray-800 group relative">
-          <div className="text-gray-500 dark:text-gray-400 text-sm text-center transition-opacity duration-300 ease-in-out opacity-100 group-hover:opacity-0">
-            <a
-              href="https://www.lasereyes.build/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Powered by LaserEyes
-            </a>
-          </div>
-          <div className="absolute top-5 left-0 right-0 transition-opacity duration-500 ease-in-out opacity-0 group-hover:opacity-100">
-            <a
-              href="https://www.lasereyes.build/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex justify-center"
-            >
-              <LaserEyesLogo width={48} color={"blue"} />
-            </a>
-          </div>
+        <div className="w-full bg-blue-400 p-4 border-t-4 border-black text-center font-bold">
+          <a
+            href="https://www.lasereyes.build/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline"
+          >
+            Powered by LaserEyes
+          </a>
         </div>
       </DialogContent>
     </Dialog>
