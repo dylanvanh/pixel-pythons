@@ -4,9 +4,7 @@ import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { useMintStore } from "@/store/mintStore";
-import { useAppKitProvider } from "@reown/appkit/react";
-import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
-import { useWalletAddresses } from '@/hooks/useWalletAddresses'
+import { useLaserEyes } from "@omnisat/lasereyes";
 
 export function MintForm() {
   const mintStep = useMintStore((state) => state.mintStep);
@@ -18,16 +16,21 @@ export function MintForm() {
   const resetMintProcess = useMintStore((state) => state.resetMintProcess);
   const setWalletProvider = useMintStore((state) => state.setWalletProvider);
 
-  // Get Bitcoin wallet provider from AppKit
-  const { walletProvider } = useAppKitProvider<BitcoinConnector>("bip122");
-  const { paymentAddress, ordinalAddress } = useWalletAddresses(walletProvider);
+  // Get wallet info from LaserEyes
+  const { address: ordinalAddress, paymentAddress, signPsbt, publicKey, paymentPublicKey } = useLaserEyes();
 
   // Initialize wallet when addresses are available
   useEffect(() => {
-    if (walletProvider && paymentAddress && ordinalAddress) {
-      setWalletProvider(walletProvider);
+    if (ordinalAddress && paymentAddress) {
+      setWalletProvider({ 
+        ordinalAddress, 
+        paymentAddress,
+        signPsbt,
+        publicKey,
+        paymentPublicKey
+      });
     }
-  }, [walletProvider, paymentAddress, ordinalAddress, setWalletProvider]);
+  }, [ordinalAddress, paymentAddress, setWalletProvider, signPsbt, publicKey, paymentPublicKey]);
 
   const renderStepContent = () => {
     switch (mintStep) {
@@ -35,10 +38,10 @@ export function MintForm() {
         return (
           <Button
             onClick={startMintProcess}
-            disabled={isLoading || !walletProvider}
+            disabled={isLoading || !ordinalAddress}
             className="w-full bg-black text-white border-4 border-black font-bold text-2xl py-8 hover:bg-white hover:text-black transition duration-200"
           >
-            {!walletProvider ? "CONNECT WALLET" : "MINT"}
+            {!ordinalAddress ? "CONNECT WALLET" : "MINT"}
           </Button>
         );
 
@@ -59,7 +62,7 @@ export function MintForm() {
             <div className="flex space-x-2">
               <Button
                 onClick={signCommitTransaction}
-                disabled={isLoading || !walletProvider}
+                disabled={isLoading || !paymentAddress}
                 className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
                 {isLoading ? "Signing..." : "Sign"}
@@ -131,7 +134,7 @@ export function MintForm() {
             <div className="flex space-x-2">
               <Button
                 onClick={signRevealTransaction}
-                disabled={isLoading || !walletProvider}
+                disabled={isLoading || !ordinalAddress}
                 className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
               >
                 {isLoading ? "Signing..." : "Sign"}

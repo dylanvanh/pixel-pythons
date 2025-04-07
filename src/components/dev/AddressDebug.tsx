@@ -1,30 +1,20 @@
 'use client'
 
-import { useAppKitProvider } from '@reown/appkit/react'
-import type { BitcoinConnector } from '@reown/appkit-adapter-bitcoin'
+import { useLaserEyes } from '@omnisat/lasereyes'
 
 export function AddressDebug() {
-  const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122')
+  const { address, paymentAddress, publicKey, paymentPublicKey } = useLaserEyes()
   
   if (process.env.NODE_ENV === "production") return null;
 
-  const logAddresses = async () => {
-    if (!walletProvider) {
-      console.log('No wallet provider connected')
-      return
-    }
-
-    try {
-      const addresses = await walletProvider.getAccountAddresses()
-      console.log('Raw AppKit Address Response:', addresses)
-      // Pretty print the addresses for better readability
-      addresses.forEach((addr, i) => {
-        console.log(`\nAddress ${i + 1}:`)
-        console.log(JSON.stringify(addr, null, 2))
-      })
-    } catch (err) {
-      console.error('Error fetching addresses:', err)
-    }
+  const logAddresses = () => {
+    console.log('LaserEyes Addresses:')
+    console.log({
+      ordinalsAddress: address,
+      paymentAddress: paymentAddress,
+      ordinalsPublicKey: publicKey,
+      paymentPublicKey: paymentPublicKey
+    })
   }
 
   return (

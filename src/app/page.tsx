@@ -1,6 +1,6 @@
 import { MintForm } from "@/components/MintForm";
 import { RecentMints } from "@/components/RecentMints";
-import { ConnectButton } from "@/components/appkit/ConnectButton";
+import ConnectWallet from "@/components/ConnectWallet";
 import Link from "next/link";
 
 export default function Home() {
@@ -10,11 +10,14 @@ export default function Home() {
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-6">
             <h1 className="text-xl font-bold">Ordinal Mint</h1>
-            <Link href="/psbt-signer" className="font-semibold text-black/80 hover:underline">
+            <Link
+              href="/psbt-signer"
+              className="font-semibold text-black/80 hover:underline"
+            >
               PSBT Signer
             </Link>
           </div>
-          <ConnectButton />
+          <ConnectWallet />
         </div>
       </header>
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AppKitProvider from "@/providers/AppKitProvider";
+import { LaserEyesProvider } from "@omnisat/lasereyes";
 import { AddressDebug } from "@/components/dev/AddressDebug";
 
 const geistSans = Geist({
@@ -29,10 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppKitProvider>
+        <LaserEyesProvider>
           {children}
           <AddressDebug />
-        </AppKitProvider>
+        </LaserEyesProvider>
       </body>
     </html>
   );
