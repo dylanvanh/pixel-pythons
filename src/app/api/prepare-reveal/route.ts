@@ -4,12 +4,8 @@ import { createRevealParams } from "@/lib/bitcoin/inscriptions/commit-tx";
 export async function POST(request: Request) {
   try {
     // Get parameters from the request body
-    const {
-      commitTxid,
-      ordinalsAddress,
-      ordinalsPublicKey,
-      feeRate,
-    } = await request.json();
+    const { commitTxid, ordinalsAddress, ordinalsPublicKey, feeRate } =
+      await request.json();
 
     // Validate required parameters
     if (!commitTxid || !ordinalsAddress || !ordinalsPublicKey) {
@@ -32,7 +28,7 @@ export async function POST(request: Request) {
     const revealResult = prepareRevealTx(
       commitTxid,
       ordinalsAddress,
-      revealParams
+      revealParams,
     );
 
     // Return the reveal transaction data
@@ -51,4 +47,5 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-} 
+}
+

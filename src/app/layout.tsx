@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppKitProvider from "@/providers/AppKitProvider";
+import { AddressDebug } from "@/components/dev/AddressDebug";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
       >
         <AppKitProvider>
           {children}
+          <AddressDebug />
         </AppKitProvider>
       </body>
     </html>

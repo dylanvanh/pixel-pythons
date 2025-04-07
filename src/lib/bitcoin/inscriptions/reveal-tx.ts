@@ -15,7 +15,7 @@ export type RevealPsbtResult = {
  * Takes the actual transaction ID of the broadcasted commit transaction
  */
 export function prepareRevealTx(
-  commitTxid: string, 
+  commitTxid: string,
   userOrdinalsAddress: string,
   revealParams: {
     taprootRevealScript: Uint8Array;
@@ -23,7 +23,7 @@ export function prepareRevealTx(
     controlBlock: Uint8Array;
     inscriptionScript: Uint8Array;
     postage: number;
-  }
+  },
 ): RevealPsbtResult {
   // Create reveal transaction PSBT
   const revealPsbt = new bitcoin.Psbt();
@@ -59,4 +59,4 @@ export function prepareRevealTx(
     revealFee: revealParams.taprootRevealValue - revealParams.postage, // The fee is the remainder
     expectedInscriptionId: `${expectedTxid}_0`,
   };
-} 
+}

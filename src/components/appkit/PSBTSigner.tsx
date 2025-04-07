@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAppKitProvider } from '@reown/appkit/react'
 import type { BitcoinConnector } from '@reown/appkit-adapter-bitcoin'
 import { useClientMounted } from '@/hooks/useClientMount'
+import { useWalletAddresses } from '@/hooks/useWalletAddresses'
 import { ArrowRight, Copy, ExternalLink, Loader2 } from 'lucide-react'
 
 enum TransactionType {
@@ -16,44 +17,19 @@ export const PSBTSigner = () => {
   const [signedPsbt, setSignedPsbt] = useState('')
   const [txid, setTxid] = useState('')
   const [error, setError] = useState('')
-  const [paymentAddress, setPaymentAddress] = useState('')
-  const [ordinalAddress, setOrdinalAddress] = useState('')
   const [transactionType, setTransactionType] = useState<TransactionType>(TransactionType.COMMIT)
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const mounted = useClientMounted()
   const { walletProvider } = useAppKitProvider<BitcoinConnector>('bip122')
+  const { paymentAddress, ordinalAddress, error: addressError } = useWalletAddresses(walletProvider)
 
-  // Fetch all addresses when wallet provider is available
+  // Update error state if address fetching fails
   useEffect(() => {
-    if (walletProvider) {
-      const fetchAddresses = async () => {
-        try {
-          const accountAddresses = await walletProvider.getAccountAddresses();
-          
-          // Find payment and ordinal addresses
-          const paymentAddr = accountAddresses.find(addr => addr.purpose === 'payment');
-          const ordinalAddr = accountAddresses.find(addr => addr.purpose === 'ordinal');
-          
-          if (paymentAddr) {
-            setPaymentAddress(paymentAddr.address);
-          }
-          
-          if (ordinalAddr) {
-            setOrdinalAddress(ordinalAddr.address);
-          } else if (accountAddresses.length > 0) {
-            // Fallback to first address if no ordinal address is found
-            setOrdinalAddress(accountAddresses[0].address);
-          }
-        } catch (err) {
-          console.error('Failed to fetch addresses:', err);
-          setError('Failed to fetch addresses');
-        }
-      };
-      
-      fetchAddresses();
+    if (addressError) {
+      setError(addressError)
     }
-  }, [walletProvider]);
+  }, [addressError])
 
   const prepareAndSignCommitTx = async () => {
     if (!walletProvider || !paymentAddress || !ordinalAddress) {

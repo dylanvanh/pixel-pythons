@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
+import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
+import { create } from "zustand";
 
 export type MintStep = "ready" | "commit" | "reveal" | "success";
 
@@ -87,36 +87,69 @@ export const useMintStore = create<MintState>((set, get) => ({
     })),
   setWalletProvider: (provider: BitcoinConnector | null) =>
     set(() => {
-      // When setting wallet provider, also try to fetch addresses
-      if (provider) {
-        provider
-          .getAccountAddresses()
-          .then((accountAddresses) => {
-            const paymentAddr = accountAddresses.find(
-              (addr) => addr.purpose === "payment",
-            );
-            const ordinalAddr = accountAddresses.find(
-              (addr) => addr.purpose === "ordinal",
-            );
-
-            if (paymentAddr && ordinalAddr) {
-              set({
-                paymentAddress: paymentAddr.address,
-                ordinalsAddress: ordinalAddr.address,
-              });
-            } else if (accountAddresses.length > 0) {
-              // Fallback to first address if no ordinal address is found
-              set({
-                paymentAddress: accountAddresses[0].address,
-                ordinalsAddress: accountAddresses[0].address,
-              });
-            }
-          })
-          .catch((err) => {
-            console.error("Failed to fetch addresses:", err);
-          });
+      if (!provider) {
+        return {
+          walletProvider: null,
+          paymentAddress: "",
+          ordinalsAddress: "",
+        };
       }
 
+      // Set the provider immediately but clear addresses
+      set({
+        walletProvider: provider,
+        paymentAddress: "",
+        ordinalsAddress: "",
+      });
+
+      // Then fetch and set addresses
+      provider
+        .getAccountAddresses()
+        .then((accountAddresses) => {
+          console.log("accountAddresses", accountAddresses);
+
+          const paymentAddr = accountAddresses.find(
+            (addr) => addr.purpose === "payment",
+          );
+          const ordinalAddr = accountAddresses.find((addr) => {
+            const purpose = addr.purpose as string;
+            return purpose === "ordinal" || purpose === "ordinals";
+          });
+
+          if (!paymentAddr) {
+            console.error("Wallet must provide at least a payment address", {
+              paymentAddr,
+              ordinalAddr,
+              accountAddresses,
+            });
+            // Clear the provider if we don't have a payment address
+            set({
+              walletProvider: null,
+              paymentAddress: "",
+              ordinalsAddress: "",
+            });
+            throw new Error("Wallet must provide at least a payment address");
+          }
+
+          // Some wallets (like OKX) only provide a single payment address
+          // In these cases, we use the same address for both payment and ordinals
+          // This is safe because both operations (payment and inscription) are supported on the same address type
+          set({
+            paymentAddress: paymentAddr.address,
+            ordinalsAddress: ordinalAddr?.address || paymentAddr.address,
+          });
+        })
+        .catch((err) => {
+          console.error("Failed to fetch addresses:", err);
+          // Clear everything if there's an error
+          set({
+            walletProvider: null,
+            paymentAddress: "",
+            ordinalsAddress: "",
+          });
+        });
+
+      // Return initial state with provider
       return { walletProvider: provider };
     }),
   setAddresses: (paymentAddr: string, ordinalsAddr: string) =>
@@ -158,6 +191,9 @@ export const useMintStore = create<MintState>((set, get) => ({
       walletProvider,
     } = get();
 
+    console.log("paymentAddress", paymentAddress);
+    console.log("ordinalsAddress", ordinalsAddress);
+
     if (!walletProvider || !paymentAddress || !ordinalsAddress) {
       console.error("Wallet provider not connected or addresses not available");
       return;
@@ -168,6 +204,7 @@ export const useMintStore = create<MintState>((set, get) => ({
     try {
       // Get address information from wallet
       const addresses = await walletProvider.getAccountAddresses();
+      console.log("addresses", addresses);
       const paymentAddrInfo = addresses.find(
         (addr) => addr.address === paymentAddress,
       );

@@ -6,63 +6,28 @@ import { Button } from "./ui/button";
 import { useMintStore } from "@/store/mintStore";
 import { useAppKitProvider } from "@reown/appkit/react";
 import type { BitcoinConnector } from "@reown/appkit-adapter-bitcoin";
+import { useWalletAddresses } from '@/hooks/useWalletAddresses'
 
 export function MintForm() {
   const mintStep = useMintStore((state) => state.mintStep);
   const isLoading = useMintStore((state) => state.isLoading);
   const transactions = useMintStore((state) => state.transactions);
   const startMintProcess = useMintStore((state) => state.startMintProcess);
-  const signCommitTransaction = useMintStore(
-    (state) => state.signCommitTransaction,
-  );
-  const signRevealTransaction = useMintStore(
-    (state) => state.signRevealTransaction,
-  );
+  const signCommitTransaction = useMintStore((state) => state.signCommitTransaction);
+  const signRevealTransaction = useMintStore((state) => state.signRevealTransaction);
   const resetMintProcess = useMintStore((state) => state.resetMintProcess);
-
-  // New state setters for the wallet
   const setWalletProvider = useMintStore((state) => state.setWalletProvider);
-  const setAddresses = useMintStore((state) => state.setAddresses);
 
   // Get Bitcoin wallet provider from AppKit
   const { walletProvider } = useAppKitProvider<BitcoinConnector>("bip122");
+  const { paymentAddress, ordinalAddress } = useWalletAddresses(walletProvider);
 
-  // Initialize wallet and addresses when wallet provider changes
+  // Initialize wallet when addresses are available
   useEffect(() => {
-    if (walletProvider) {
-      // Store wallet provider in the state
+    if (walletProvider && paymentAddress && ordinalAddress) {
       setWalletProvider(walletProvider);
-
-      // Fetch addresses from wallet
-      const fetchAddresses = async () => {
-        try {
-          const accountAddresses = await walletProvider.getAccountAddresses();
-
-          // Find payment and ordinal addresses
-          const paymentAddr = accountAddresses.find(
-            (addr) => addr.purpose === "payment",
-          );
-          const ordinalAddr = accountAddresses.find(
-            (addr) => addr.purpose === "ordinal",
-          );
-
-          if (paymentAddr && ordinalAddr) {
-            // Store addresses in the state
-            setAddresses(paymentAddr.address, ordinalAddr.address);
-          } else {
-            console.error("Could not find required addresses in wallet");
-          }
-        } catch (err) {
-          console.error("Error fetching addresses:", err);
-        }
-      };
-
-      fetchAddresses();
-    } else {
-      // Reset wallet provider when disconnected
-      setWalletProvider(null);
     }
-  }, [walletProvider, setWalletProvider, setAddresses]);
+  }, [walletProvider, paymentAddress, ordinalAddress, setWalletProvider]);
 
   const renderStepContent = () => {
     switch (mintStep) {
