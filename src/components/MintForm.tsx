@@ -1,66 +1,253 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { useMintStore } from "@/store/mintStore";
-import { useLaserEyes } from "@omnisat/lasereyes";
+import {
+  useLaserEyes,
+  UNISAT,
+  XVERSE,
+  OYL,
+  MAGIC_EDEN,
+  OKX,
+  ORANGE,
+  LEATHER,
+  PHANTOM,
+  WIZZ,
+  SUPPORTED_WALLETS,
+  WalletIcon,
+  LaserEyesSignPsbtOptions,
+} from "@omnisat/lasereyes";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export function MintForm() {
   const mintStep = useMintStore((state) => state.mintStep);
   const isLoading = useMintStore((state) => state.isLoading);
   const transactions = useMintStore((state) => state.transactions);
   const startMintProcess = useMintStore((state) => state.startMintProcess);
-  const signCommitTransaction = useMintStore((state) => state.signCommitTransaction);
-  const signRevealTransaction = useMintStore((state) => state.signRevealTransaction);
+  const signCommitTransaction = useMintStore(
+    (state) => state.signCommitTransaction,
+  );
+  const signRevealTransaction = useMintStore(
+    (state) => state.signRevealTransaction,
+  );
   const resetMintProcess = useMintStore((state) => state.resetMintProcess);
   const setWalletProvider = useMintStore((state) => state.setWalletProvider);
 
-  const { address: ordinalAddress, paymentAddress, signPsbt: laserEyesSignPsbt, publicKey, paymentPublicKey } = useLaserEyes();
+  // State for wallet dialog
+  const [walletDialogOpen, setWalletDialogOpen] = useState(false);
 
-  const signPsbtWrapper = async (
-    options: { tx: string; finalize?: boolean; broadcast?: boolean; inputsToSign: { index: number; address: string }[] } | string,
-    finalize?: boolean,
-    broadcast?: boolean
-  ): Promise<{ psbt?: string; txId?: string }> => {
-    if (typeof options === 'string') {
-      const response = await laserEyesSignPsbt(options, finalize, broadcast);
+  const {
+    address: ordinalAddress,
+    paymentAddress,
+    signPsbt: laserEyesSignPsbt,
+    publicKey,
+    paymentPublicKey,
+    connect,
+    hasUnisat,
+    hasXverse,
+    hasOyl,
+    hasMagicEden,
+    hasOkx,
+    hasLeather,
+    hasPhantom,
+    hasWizz,
+    hasOrange,
+  } = useLaserEyes();
+
+  // Wallet status mapping
+  const walletStatusMap = {
+    [UNISAT]: hasUnisat,
+    [XVERSE]: hasXverse,
+    [OYL]: hasOyl,
+    [MAGIC_EDEN]: hasMagicEden,
+    [OKX]: hasOkx,
+    [ORANGE]: hasOrange,
+    [LEATHER]: hasLeather,
+    [PHANTOM]: hasPhantom,
+    [WIZZ]: hasWizz,
+  };
+
+  // Format wallet name for display
+  const formatWalletName = (name: string) => {
+    return name
+      .replace(/[-_]/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  // Handle wallet connection
+  const handleConnectWallet = async (walletName: string) => {
+    setWalletDialogOpen(false);
+    await connect(
+      walletName as
+        | typeof UNISAT
+        | typeof XVERSE
+        | typeof OYL
+        | typeof MAGIC_EDEN
+        | typeof OKX
+        | typeof ORANGE
+        | typeof LEATHER
+        | typeof PHANTOM
+        | typeof WIZZ,
+    );
+  };
+
+  const signPsbtWrapper = useCallback(
+    async (
+      options: LaserEyesSignPsbtOptions | string,
+      finalize?: boolean,
+      broadcast?: boolean,
+    ): Promise<{ psbt?: string; txId?: string }> => {
+      if (typeof options === "string") {
+        const response = await laserEyesSignPsbt(options, finalize, broadcast);
+        return {
+          psbt: response?.signedPsbtBase64,
+          txId: response?.txId,
+        };
+      }
+      const response = await laserEyesSignPsbt(options);
       return {
         psbt: response?.signedPsbtBase64,
-        txId: response?.txId
+        txId: response?.txId,
       };
-    }
-    const response = await laserEyesSignPsbt(options);
-    return {
-      psbt: response?.signedPsbtBase64,
-      txId: response?.txId
-    };
-  };
+    },
+    [laserEyesSignPsbt],
+  );
 
   // Initialize wallet when addresses are available
   useEffect(() => {
     if (ordinalAddress && paymentAddress) {
-      setWalletProvider({ 
-        ordinalAddress, 
+      setWalletProvider({
+        ordinalAddress,
         paymentAddress,
         signPsbt: signPsbtWrapper,
         publicKey,
-        paymentPublicKey
+        paymentPublicKey,
       });
     }
-  }, [ordinalAddress, paymentAddress, setWalletProvider, laserEyesSignPsbt, publicKey, paymentPublicKey]);
+  }, [
+    ordinalAddress,
+    paymentAddress,
+    setWalletProvider,
+    publicKey,
+    paymentPublicKey,
+    signPsbtWrapper,
+  ]);
 
   const renderStepContent = () => {
     switch (mintStep) {
       case "ready":
         return (
-          <Button
-            onClick={startMintProcess}
-            disabled={isLoading || !ordinalAddress}
-            className="w-full bg-black text-white border-4 border-black font-bold text-2xl py-8 hover:bg-white hover:text-black transition duration-200"
-          >
-            {!ordinalAddress ? "CONNECT WALLET" : "MINT"}
-          </Button>
+          <>
+            <Button
+              onClick={
+                ordinalAddress
+                  ? startMintProcess
+                  : () => setWalletDialogOpen(true)
+              }
+              disabled={isLoading}
+              className="w-full bg-black text-white border-4 border-black font-bold text-2xl py-8 hover:bg-white hover:text-black transition duration-200 shadow-[8px_8px_0px_0px_rgba(0,0,0)]"
+            >
+              {!ordinalAddress ? "CONNECT WALLET" : "MINT"}
+            </Button>
+
+            {/* Wallet Connection Dialog */}
+            <Dialog open={walletDialogOpen} onOpenChange={setWalletDialogOpen}>
+              <DialogContent
+                className={cn(
+                  "bg-white border-4 border-black",
+                  "rounded-lg shadow-[8px_8px_0px_0px_rgba(0,0,0)]",
+                  "w-[480px] max-h-[560px]",
+                  "flex flex-col overflow-hidden p-0",
+                )}
+              >
+                <DialogHeader className="px-6 pt-5 pb-3 border-b-4 border-black bg-blue-400">
+                  <DialogTitle className="text-center text-2xl font-bold">
+                    Connect Wallet
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {Object.values(SUPPORTED_WALLETS)
+                    .sort((a, b) => {
+                      const aInstalled =
+                        walletStatusMap[a.name as keyof typeof walletStatusMap];
+                      const bInstalled =
+                        walletStatusMap[b.name as keyof typeof walletStatusMap];
+
+                      // Sort by installation status first
+                      if (aInstalled && !bInstalled) return -1;
+                      if (!aInstalled && bInstalled) return 1;
+
+                      // If both are installed or both are not installed, keep original order
+                      return 0;
+                    })
+                    .map((wallet) => {
+                      const isInstalled =
+                        walletStatusMap[
+                          wallet.name as keyof typeof walletStatusMap
+                        ];
+                      return (
+                        <button
+                          key={wallet.name}
+                          onClick={
+                            isInstalled
+                              ? () => handleConnectWallet(wallet.name)
+                              : undefined
+                          }
+                          className={cn(
+                            "w-full bg-white py-3 px-4 flex items-center justify-between",
+                            "border-4 border-black rounded-lg",
+                            "transition-all duration-200",
+                            isInstalled
+                              ? "hover:bg-blue-300 hover:translate-y-[-2px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0)]"
+                              : "opacity-50 cursor-not-allowed",
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <WalletIcon walletName={wallet.name} size={32} />
+                            <span className="text-lg font-bold">
+                              {formatWalletName(wallet.name)}
+                            </span>
+                          </div>
+                          {!isInstalled && (
+                            <a
+                              href={wallet.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="border-2 border-black px-2 py-1 rounded bg-yellow-300 hover:bg-yellow-400 font-bold text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Install
+                            </a>
+                          )}
+                        </button>
+                      );
+                    })}
+                </div>
+
+                <div className="w-full bg-blue-400 p-4 border-t-4 border-black text-center font-bold">
+                  <a
+                    href="https://www.lasereyes.build/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    Powered by LaserEyes
+                  </a>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
         );
 
       case "commit":

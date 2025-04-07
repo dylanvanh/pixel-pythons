@@ -1,27 +1,33 @@
 'use client'
 
 import PsbtSigner from "@/components/PsbtSigner"
-import ConnectWallet from "@/components/ConnectWallet"
-import Link from "next/link"
+import { WalletInfo } from "@/components/WalletInfo"
 
 export default function PsbtSignerPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="bg-white border-b border-gray-200 py-4 px-6">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold">
-              <Link href="/">Ordinal Mint</Link>
-            </h1>
-            <span className="font-semibold text-orange-500">PSBT Signer</span>
-          </div>
-          <ConnectWallet />
+    <div className="flex flex-col min-h-screen relative">
+      <main className="flex-1 flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-b from-blue-50 to-blue-100">
+        <div className="max-w-md w-full mx-auto">
+          <WalletInfo className="mb-4" />
+          <PsbtSigner />
         </div>
-      </header>
-
-      <main className="flex-1 flex flex-col items-center py-12 px-4 bg-gradient-to-b from-orange-50 to-amber-100">
-        <PsbtSigner />
       </main>
+
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-100 border-t border-gray-300 p-1.5 text-center opacity-70 hover:opacity-100 transition-opacity">
+        <div className="flex justify-center items-center max-w-xl mx-auto">
+          <p className="text-[10px] text-gray-600">Use at your own risk.</p>
+          <div className="h-3 mx-3 border-r border-gray-300"></div>
+          <a
+            href="https://github.com/dylanvanh/ordinal-mint"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] text-gray-600 hover:text-gray-900 transition-colors"
+            aria-label="GitHub"
+          >
+            GitHub
+          </a>
+        </div>
+      </div>
     </div>
   )
 } 
