@@ -214,17 +214,13 @@ export const useMintStore = create<MintState>((set, get) => ({
         broadcast: true,
       });
 
+      console.log("result", result);
+
       if (result.txId) {
         setCommitTxid(result.txId);
         setCommitSigned(true);
         setCommitBroadcasted(true);
         setMintStep("reveal");
-
-        // Also store reveal PSBT if it was prepared together
-        if (commitResult.revealPsbt) {
-          // Store the reveal PSBT in localStorage for later use
-          localStorage.setItem("revealPsbt", commitResult.revealPsbt);
-        }
       } else {
         throw new Error("No transaction ID returned from signing");
       }

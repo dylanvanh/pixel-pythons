@@ -411,17 +411,21 @@ function WalletSelectorContent({
     <>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {Object.values(SUPPORTED_WALLETS)
+          .filter(wallet => wallet.name === XVERSE || wallet.name === LEATHER)
           .sort((a, b) => {
+            // Ensure XVERSE is always first
+            if (a.name === XVERSE) return -1;
+            if (b.name === XVERSE) return 1;
+            
+            // For other wallets, maintain installation-based sort
             const aInstalled =
               walletStatusMap[a.name as keyof typeof walletStatusMap];
             const bInstalled =
               walletStatusMap[b.name as keyof typeof walletStatusMap];
 
-            // Sort by installation status first
             if (aInstalled && !bInstalled) return -1;
             if (!aInstalled && bInstalled) return 1;
 
-            // If both are installed or both are not installed, keep original order
             return 0;
           })
           .map((wallet) => {

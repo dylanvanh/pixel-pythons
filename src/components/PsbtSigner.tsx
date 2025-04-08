@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLaserEyes } from "@omnisat/lasereyes";
 import { Button } from "@/components/ui/button";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 
 export default function PsbtSigner() {
   const { signPsbt, address, paymentAddress, publicKey, paymentPublicKey } =
@@ -14,6 +15,7 @@ export default function PsbtSigner() {
   const [signingType, setSigningType] = useState<"commit" | "reveal" | null>(
     null,
   );
+  const [transactionHex, setTransactionHex] = useState<string | undefined>();
 
   const handleSignTransaction = async (type: "commit" | "reveal") => {
     const signingAddress = type === "commit" ? paymentAddress : address;
@@ -45,6 +47,22 @@ export default function PsbtSigner() {
       if (result && result.txId) {
         setTxid(result.txId);
       }
+
+      const psbtSignedPsbt = bitcoin.Psbt.fromHex(result!.signedPsbtHex!);
+      psbtSignedPsbt.finalizeAllInputs();
+
+      // Extract and save transaction hex for manual broadcasting
+      const tx = psbtSignedPsbt.extractTransaction();
+      const txHex = tx.toHex();
+      setTransactionHex(txHex);
+      
+      console.log("Transaction Hex:", txHex);
+      console.log("signedPsbt", psbtSignedPsbt.extractTransaction().getHash());
+
+      console.log(
+        "psbtSignedPsbtExtracted",
+        psbtSignedPsbt.extractTransaction(),
+      );
     } catch (error) {
       console.error(`Error signing ${type} transaction:`, error);
       setError(error instanceof Error ? error.message : "Unknown error");
@@ -165,6 +183,26 @@ export default function PsbtSigner() {
               ? "Commit transaction signed with payment address"
               : "Reveal transaction signed with ordinals address"}
           </p>
+        </div>
+      )}
+
+      {transactionHex && (
+        <div className="p-3 mt-2 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-md text-sm">
+          <p className="font-medium">
+            Transaction Hex (for manual broadcasting):
+          </p>
+          <textarea
+            readOnly
+            value={transactionHex}
+            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+            className="w-full h-24 mt-2 text-xs bg-white dark:bg-gray-800 p-2 border rounded"
+          />
+          <button
+            onClick={() => navigator.clipboard.writeText(transactionHex)}
+            className="mt-2 text-xs bg-blue-600 hover:bg-blue-700 text-white py-1 px-2 rounded"
+          >
+            Copy to Clipboard
+          </button>
         </div>
       )}
     </div>

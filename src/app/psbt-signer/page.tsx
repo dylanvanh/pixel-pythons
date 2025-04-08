@@ -1,7 +1,7 @@
-'use client'
+"use client";
 
-import PsbtSigner from "@/components/PsbtSigner"
-import { WalletInfo } from "@/components/WalletInfo"
+import PsbtSigner from "@/components/PsbtSigner";
+import { WalletInfo } from "@/components/WalletInfo";
 
 export default function PsbtSignerPage() {
   return (
@@ -29,5 +29,6 @@ export default function PsbtSignerPage() {
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}
+
