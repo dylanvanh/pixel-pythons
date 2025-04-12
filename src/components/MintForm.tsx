@@ -17,7 +17,6 @@ import {
   WIZZ,
   SUPPORTED_WALLETS,
   WalletIcon,
-  LaserEyesSignPsbtOptions,
 } from "@omnisat/lasereyes";
 import {
   Dialog,
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 
 export function MintForm() {
   const mintStep = useMintStore((state) => state.mintStep);
@@ -111,7 +111,14 @@ export function MintForm() {
 
   const signPsbtWrapper = useCallback(
     async (
-      options: LaserEyesSignPsbtOptions | string,
+      options:
+        | {
+            tx: string;
+            finalize?: boolean;
+            broadcast?: boolean;
+            inputsToSign: { index: number; address: string }[];
+          }
+        | string,
       finalize?: boolean,
       broadcast?: boolean,
     ): Promise<{ psbt?: string; txId?: string }> => {
@@ -122,9 +129,24 @@ export function MintForm() {
           txId: response?.txId,
         };
       }
-      const response = await laserEyesSignPsbt(options);
+      
+      // When options is passed as an object, ensure finalize and broadcast are forwarded
+      const objOptions = options as {
+        tx: string;
+        finalize?: boolean;
+        broadcast?: boolean;
+        inputsToSign: { index: number; address: string }[];
+      };
+      
+      // Make sure we pass through the finalize and broadcast flags that were provided
+      const response = await laserEyesSignPsbt({
+        ...objOptions,
+        finalize: objOptions.finalize !== undefined ? objOptions.finalize : finalize,
+        broadcast: objOptions.broadcast !== undefined ? objOptions.broadcast : broadcast
+      });
+      
       return {
-        psbt: response?.signedPsbtBase64,
+        psbt: response?.signedPsbtHex ? bitcoin.Psbt.fromHex(response.signedPsbtHex).toBase64() : response?.signedPsbtBase64,
         txId: response?.txId,
       };
     },

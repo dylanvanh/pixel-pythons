@@ -239,91 +239,89 @@ export const useMintStore = create<MintState>((set, get) => ({
       setRevealSigned,
       setRevealTxid,
       setRevealBroadcasted,
+      paymentAddress,
       ordinalsAddress,
       walletProvider,
     } = get();
 
-    if (!walletProvider || !ordinalsAddress) {
-      console.error("Wallet provider not connected or address not available");
+    if (!walletProvider || !ordinalsAddress || !paymentAddress) {
+      console.error("Wallet provider not connected or addresses not available");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Get the reveal PSBT from localStorage
-      const revealPsbt = localStorage.getItem("revealPsbt");
-      if (!revealPsbt) {
-        // If not found in localStorage, prepare it via API
-        const result = await fetch("/api/prepare-reveal", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            commitTxid: get().transactions.commitTxid,
-            ordinalsAddress,
-            ordinalsPublicKey: walletProvider.publicKey,
-            paymentAddress: get().paymentAddress,
-            paymentPublicKey: walletProvider.paymentPublicKey,
-          }),
-        }).then(async (response) => {
-          if (!response.ok) {
-            const data = await response.json();
-            throw new Error(
-              data.error || "Failed to prepare reveal transaction",
-            );
-          }
-          return response.json();
-        });
-
-        if (!result.revealPsbt) {
-          throw new Error("Failed to prepare reveal PSBT");
+      // Prepare the reveal transaction via API
+      const result = await fetch("/api/prepare-reveal", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commitTxid: get().transactions.commitTxid,
+          ordinalsAddress,
+          ordinalsPublicKey: walletProvider.publicKey,
+          paymentAddress,
+          paymentPublicKey: walletProvider.paymentPublicKey,
+        }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(
+            data.error || "Failed to prepare reveal transaction",
+          );
         }
+        return response.json();
+      });
 
-        // Sign with LaserEyes using the inputSigningMap from the API
-        const signResult = await walletProvider.signPsbt({
-          tx: result.revealPsbt,
-          inputsToSign: result.inputSigningMap,
-          finalize: true,
-          broadcast: true,
-        });
+      if (!result.revealPsbt) {
+        throw new Error("Failed to prepare reveal PSBT");
+      }
 
-        if (signResult.txId) {
-          setRevealTxid(signResult.txId);
-          setRevealSigned(true);
-          setRevealBroadcasted(true);
-          setMintStep("success");
-        } else {
-          throw new Error("No transaction ID returned from signing");
-        }
-      } else {
-        // This case should not happen with the new implementation
-        // but keeping it for backward compatibility
-        console.warn("Using stored PSBT - this should not happen with the new implementation");
-        const result = await walletProvider.signPsbt({
-          tx: revealPsbt,
-          inputsToSign: Array.from({
-            length: bitcoin.Psbt.fromBase64(revealPsbt).data.inputs.length,
-          }).map((_, i) => ({
-            index: i,
-            address: i === 0 ? ordinalsAddress : get().paymentAddress,
-          })),
-          finalize: true,
-          broadcast: true,
-        });
+      // Log the input signing map to help with debugging
+      console.log("Reveal PSBT input signing map:", result.inputSigningMap);
+      
+      // The available addresses we can sign with
+      const availableAddresses = [ordinalsAddress, paymentAddress].filter(Boolean);
+      console.log("Available addresses for signing:", availableAddresses);
+      
+      // Determine which inputs we can sign with our available addresses
+      const inputsToSign = result.inputSigningMap ? 
+        result.inputSigningMap.filter((input: { index: number; address: string }) => 
+          availableAddresses.includes(input.address)
+        ) : 
+        // If no input signing map provided, default to index 0 with ordinals address
+        [{ index: 0, address: ordinalsAddress }];
+        
+      if (inputsToSign.length === 0) {
+        throw new Error(
+          `None of your available addresses (${availableAddresses.join(', ')}) match the required signing addresses in the input map.`
+        );
+      }
+      
+      console.log(`Found ${inputsToSign.length} inputs to sign:`, inputsToSign);
 
-        if (result.txId) {
-          setRevealTxid(result.txId);
-          setRevealSigned(true);
-          setRevealBroadcasted(true);
-          setMintStep("success");
+      // Sign and broadcast in a single operation
+      const signResult = await walletProvider.signPsbt({
+        tx: result.revealPsbt,
+        inputsToSign: inputsToSign,
+        finalize: true,
+        broadcast: true,
+      });
 
-          // Clear localStorage
-          localStorage.removeItem("revealPsbt");
-        } else {
-          throw new Error("No transaction ID returned from signing");
-        }
+      if (!signResult.txId) {
+        throw new Error("No transaction ID returned from signing");
+      }
+      
+      // Update state with results
+      setRevealTxid(signResult.txId);
+      setRevealSigned(true);
+      setRevealBroadcasted(true);
+      setMintStep("success");
+      
+      if (result.expectedInscriptionId) {
+        console.log("Expected inscription ID:", result.expectedInscriptionId);
       }
     } catch (error) {
       console.error("Error signing reveal transaction:", error);
