@@ -4,11 +4,11 @@ import { createRevealParams } from "@/lib/bitcoin/inscriptions/commit-tx";
 export async function POST(request: Request) {
   try {
     // Get parameters from the request body
-    const { commitTxid, ordinalsAddress, ordinalsPublicKey, feeRate } =
+    const { commitTxid, ordinalsAddress, ordinalsPublicKey, paymentAddress, paymentPublicKey, feeRate } =
       await request.json();
 
     // Validate required parameters
-    if (!commitTxid || !ordinalsAddress || !ordinalsPublicKey) {
+    if (!commitTxid || !ordinalsAddress || !ordinalsPublicKey || !paymentAddress) {
       return Response.json(
         { error: "Missing required parameters" },
         { status: 400 },
@@ -19,15 +19,23 @@ export async function POST(request: Request) {
       commitTxid,
       ordinalsAddress,
       ordinalsPublicKey,
+      paymentAddress,
+      paymentPublicKey,
+      feeRate,
     });
 
     // Recreate reveal parameters from the ordinals public key
-    const revealParams = createRevealParams(ordinalsPublicKey, { feeRate });
+    const revealParams = createRevealParams(ordinalsPublicKey, { 
+      // feeRate,
+      feeRate: 3,
+      paymentPublicKey 
+    });
 
     // Prepare the reveal transaction
-    const revealResult = prepareRevealTx(
+    const revealResult = await prepareRevealTx(
       commitTxid,
       ordinalsAddress,
+      paymentAddress,
       revealParams,
     );
 
@@ -36,6 +44,7 @@ export async function POST(request: Request) {
       revealPsbt: revealResult.revealPsbt,
       revealFee: revealResult.revealFee,
       expectedInscriptionId: revealResult.expectedInscriptionId,
+      inputSigningMap: revealResult.inputSigningMap,
     });
   } catch (error) {
     console.error("Error preparing reveal transaction:", error);

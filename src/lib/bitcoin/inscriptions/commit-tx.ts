@@ -69,20 +69,17 @@ export async function prepareCommitTx(
     xOnlyPubkey = secp256k1.xOnlyPointFromPoint(pubKeyBytes);
   }
 
-  // Create the inscription script
   const inscriptionScript = createInscriptionScript(
     xOnlyPubkey,
     contentType,
     content,
   );
 
-  // Create taproot script tree
   const scriptTree = {
     output: inscriptionScript,
     version: 0xc0,
   };
 
-  // Generate the taproot payment with witness data
   const taprootPayment = bitcoin.payments.p2tr({
     internalPubkey: Uint8Array.from(xOnlyPubkey),
     scriptTree,
@@ -100,14 +97,13 @@ export async function prepareCommitTx(
     throw new Error("Failed to generate taproot payment");
   }
 
-  // Get the control block from the witness data
   const controlBlock =
     taprootPayment.witness[taprootPayment.witness.length - 1];
 
-  // Calculate fees
   const revealFee = estimateRevealFee(content.length, feeRate);
   const commitFee = estimateCommitFee(userWallet.utxos.length, feeRate);
-  const totalRequired = commitFee + revealFee + postage + 1000; // Extra buffer for safety
+
+  const totalRequired = commitFee + DUST_LIMIT + 1000; // Extra buffer for safety
 
   // Calculate user's total input amount
   const userTotal = userWallet.utxos.reduce(
@@ -125,6 +121,7 @@ export async function prepareCommitTx(
   // Create commit transaction PSBT
   const commitPsbt = new bitcoin.Psbt();
 
+  // #TODO: Clean this up later
   // When adding inputs to the commit PSBT
   for (const utxo of userWallet.utxos) {
     // For P2SH addresses (starting with '3')
@@ -166,10 +163,10 @@ export async function prepareCommitTx(
   // Output 0: Taproot output for the inscription reveal
   commitPsbt.addOutput({
     script: taprootPayment.output,
-    value: BigInt(revealFee + postage),
+    value: BigInt(DUST_LIMIT),
   });
 
-  // Output 1: Change back to user (if above dust limit)
+  // Output 1: Change back to user
   const changeAmount = userTotal - totalRequired;
   if (changeAmount > DUST_LIMIT) {
     commitPsbt.addOutput({
@@ -182,7 +179,7 @@ export async function prepareCommitTx(
     commitPsbt: commitPsbt.toBase64(),
     commitFee,
     taprootRevealScript: taprootPayment.output,
-    taprootRevealValue: revealFee + postage,
+    taprootRevealValue: DUST_LIMIT,
     revealFee,
     postage,
     controlBlock,
@@ -199,12 +196,14 @@ export function createRevealParams(
     text?: string;
     feeRate?: number;
     postage?: number;
+    paymentPublicKey?: string;
   },
 ) {
   // Set default values
   const text = options?.text || "Minting coming soon...";
   const feeRate = options?.feeRate || DEFAULT_FEE_RATE;
   const postage = options?.postage || DUST_LIMIT;
+  const paymentPublicKey = options?.paymentPublicKey;
 
   // Get the xonly pubkey
   let pubkey: Uint8Array;
@@ -221,24 +220,20 @@ export function createRevealParams(
     }
   }
 
-  // Prepare the inscription content
   const inscriptionContent = Buffer.from(text);
   const contentType = Buffer.from("text/plain;charset=utf-8");
 
-  // Create the inscription script
   const inscriptionScript = createInscriptionScript(
     pubkey,
     contentType,
     inscriptionContent,
   );
 
-  // Create taproot script tree
   const scriptTree = {
     output: inscriptionScript,
     version: 0xc0,
   };
 
-  // Generate the taproot payment with witness data
   const taprootPayment = bitcoin.payments.p2tr({
     internalPubkey: pubkey,
     scriptTree,
@@ -256,20 +251,18 @@ export function createRevealParams(
     throw new Error("Failed to generate taproot payment");
   }
 
-  // Get the control block from the witness data
   const controlBlock =
     taprootPayment.witness[taprootPayment.witness.length - 1];
 
-  // Calculate fees
   const revealFee = estimateRevealFee(inscriptionContent.length, feeRate);
 
-  // Return the reveal parameters
   return {
     taprootRevealScript: taprootPayment.output,
-    taprootRevealValue: revealFee + postage,
+    taprootRevealValue: DUST_LIMIT, // Set to exactly DUST_LIMIT
     controlBlock,
     inscriptionScript,
     postage,
     revealFee,
+    paymentPublicKey,
   };
 }

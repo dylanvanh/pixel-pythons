@@ -264,6 +264,8 @@ export const useMintStore = create<MintState>((set, get) => ({
             commitTxid: get().transactions.commitTxid,
             ordinalsAddress,
             ordinalsPublicKey: walletProvider.publicKey,
+            paymentAddress: get().paymentAddress,
+            paymentPublicKey: walletProvider.paymentPublicKey,
           }),
         }).then(async (response) => {
           if (!response.ok) {
@@ -279,16 +281,10 @@ export const useMintStore = create<MintState>((set, get) => ({
           throw new Error("Failed to prepare reveal PSBT");
         }
 
-        // Sign with LaserEyes
+        // Sign with LaserEyes using the inputSigningMap from the API
         const signResult = await walletProvider.signPsbt({
           tx: result.revealPsbt,
-          inputsToSign: Array.from({
-            length: bitcoin.Psbt.fromBase64(result.revealPsbt).data.inputs
-              .length,
-          }).map((_, i) => ({
-            index: i,
-            address: ordinalsAddress,
-          })),
+          inputsToSign: result.inputSigningMap,
           finalize: true,
           broadcast: true,
         });
@@ -302,14 +298,16 @@ export const useMintStore = create<MintState>((set, get) => ({
           throw new Error("No transaction ID returned from signing");
         }
       } else {
-        // Sign with LaserEyes using the stored PSBT
+        // This case should not happen with the new implementation
+        // but keeping it for backward compatibility
+        console.warn("Using stored PSBT - this should not happen with the new implementation");
         const result = await walletProvider.signPsbt({
           tx: revealPsbt,
           inputsToSign: Array.from({
             length: bitcoin.Psbt.fromBase64(revealPsbt).data.inputs.length,
           }).map((_, i) => ({
             index: i,
-            address: ordinalsAddress,
+            address: i === 0 ? ordinalsAddress : get().paymentAddress,
           })),
           finalize: true,
           broadcast: true,
