@@ -26,7 +26,6 @@ export function createInscriptionScript(
     currentPos += chunkSize;
   }
 
-  // Create the script elements
   const scriptElements = [
     Uint8Array.from(xOnlyPubkey),
     bitcoin.opcodes.OP_CHECKSIG,
@@ -36,7 +35,6 @@ export function createInscriptionScript(
     bitcoin.opcodes.OP_1,
     Uint8Array.from(contentType),
     bitcoin.opcodes.OP_0,
-    // Add content chunks (convert each to Uint8Array)
     ...contentChunks.map((chunk) => Uint8Array.from(chunk)),
     bitcoin.opcodes.OP_ENDIF,
   ];
@@ -172,4 +170,3 @@ export type TextInscriptionData = {
   contentType?: string;
   postage?: number;
 };
-

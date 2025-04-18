@@ -12,7 +12,12 @@ export async function POST(request: Request) {
     } = await request.json();
 
     // Validate required parameters
-    if (!paymentAddress || !ordinalsAddress || !ordinalsPublicKey || !paymentPublicKey) {
+    if (
+      !paymentAddress ||
+      !ordinalsAddress ||
+      !ordinalsPublicKey ||
+      !paymentPublicKey
+    ) {
       return Response.json(
         { error: "Missing required parameters" },
         { status: 400 },
@@ -35,7 +40,7 @@ export async function POST(request: Request) {
       {
         feeRate,
         paymentPublicKey,
-      }
+      },
     );
 
     // Return the commit transaction data (without reveal params)
@@ -53,4 +58,5 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-} 
+}
+
