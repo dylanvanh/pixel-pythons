@@ -1,6 +1,5 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
-// Type for trait layers: each layer is an array of trait option strings
 export type TraitLayers = string[][];
 
 /**
@@ -13,21 +12,13 @@ export type TraitLayers = string[][];
 export function getTraitIndices(
   address: string,
   mintIndex: number,
-  traitLayers: TraitLayers
+  traitLayers: TraitLayers,
 ): number[] {
   const uniqueStr = `${address}:${mintIndex}`;
-  const hash = crypto.createHash('sha256').update(uniqueStr).digest();
+  const hash = crypto.createHash("sha256").update(uniqueStr).digest();
   return traitLayers.map((options, i) => {
     const byte = hash[i % hash.length];
     return byte % options.length;
   });
 }
 
-// Example usage:
-// const traitLayers = [
-//   ['red', 'blue', 'green'],
-//   ['cat', 'dog', 'alien'],
-//   ['sunglasses', 'none', 'hat'],
-// ];
-// const indices = getTraitIndices('ord1qxyz...', 2, traitLayers);
-// // Use indices to select trait images for composition 

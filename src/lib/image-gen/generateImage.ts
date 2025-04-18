@@ -3,9 +3,6 @@ import fs from "fs/promises";
 import path from "path";
 import { getTraitIndices } from "./traitSelector";
 
-// If you see a type error for 'sharp', run: npm install sharp @types/sharp
-
-// Define the trait order and corresponding directories
 const TRAIT_LAYERS = [
   { name: "background", dir: "public/layers/background" },
   { name: "punks", dir: "public/layers/trait_types/punks" },
