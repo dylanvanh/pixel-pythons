@@ -1,18 +1,9 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
-import * as secp256k1 from "@bitcoinerlab/secp256k1";
 import { mempoolClient } from "../../external/mempool-client";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../constants";
-import {
-  UserWalletInfo,
-  estimateCommitFee,
-  estimateRevealFee,
-  createInscriptionScript,
-  hexToBytes,
-} from "../core/inscription-utils";
+import { UserWalletInfo, estimateCommitFee } from "../core/inscription-utils";
+import { generateInscriptionData } from "./generate-inscription-data";
 
-/**
- * Interface for commit transaction preparation result
- */
 export type CommitPsbtResult = {
   commitPsbt: string;
   commitFee: number;
@@ -24,15 +15,12 @@ export type CommitPsbtResult = {
   inscriptionScript: Uint8Array;
 };
 
-/**
- * Prepares the commit transaction for a text inscription
- */
 export async function prepareCommitTx(
   userPaymentAddress: string,
   userOrdinalsAddress: string,
   ordinalsPublicKey: string,
+  mintIndex: number,
   options?: {
-    postage?: number;
     feeRate?: number;
     paymentPublicKey?: string;
   },
@@ -48,94 +36,37 @@ export async function prepareCommitTx(
   };
 
   const feeRate = options?.feeRate || DEFAULT_FEE_RATE;
-  const text = "Minting coming soon...";
-  const postage = options?.postage || DUST_LIMIT;
 
-  // Prepare the inscription content
-  const contentType = Buffer.from("text/plain;charset=utf-8");
-  const content = Buffer.from(text);
-
-  // Process the user's public key
-  const userPubKey = Buffer.from(userWallet.ordinalsPublicKey, "hex");
-
-  // Determine if key is already in x-only format (32 bytes) or compressed format (33 bytes)
-  let xOnlyPubkey: Uint8Array;
-  if (userPubKey.length === 32) {
-    // Already in x-only format, use it directly
-    xOnlyPubkey = Uint8Array.from(userPubKey);
-  } else {
-    // Convert to x-only public key for Taproot
-    const pubKeyBytes = Uint8Array.from(userPubKey);
-    xOnlyPubkey = secp256k1.xOnlyPointFromPoint(pubKeyBytes);
-  }
-
-  const inscriptionScript = createInscriptionScript(
-    xOnlyPubkey,
-    contentType,
-    content,
+  const inscriptionData = await generateInscriptionData(
+    userOrdinalsAddress,
+    mintIndex,
+    ordinalsPublicKey,
+    feeRate,
   );
 
-  const scriptTree = {
-    output: inscriptionScript,
-    version: 0xc0,
-  };
-
-  const taprootPayment = bitcoin.payments.p2tr({
-    internalPubkey: Uint8Array.from(xOnlyPubkey),
-    scriptTree,
-    redeem: {
-      output: inscriptionScript,
-      redeemVersion: 0xc0,
-    },
-  });
-
-  if (
-    !taprootPayment.output ||
-    !taprootPayment.address ||
-    !taprootPayment.witness
-  ) {
-    throw new Error("Failed to generate taproot payment");
-  }
-
-  const controlBlock =
-    taprootPayment.witness[taprootPayment.witness.length - 1];
-
-  const revealFee = estimateRevealFee(content.length, feeRate);
   const commitFee = estimateCommitFee(userWallet.utxos.length, feeRate);
+  const totalRequired = commitFee + inscriptionData.taprootRevealValue + 1000;
 
-  const totalRequired = commitFee + DUST_LIMIT + 1000; // Extra buffer for safety
-
-  // Calculate user's total input amount
   const userTotal = userWallet.utxos.reduce(
     (sum, utxo) => sum + Math.floor(utxo.value),
     0,
   );
 
-  // Check if user has enough funds
   if (userTotal < totalRequired) {
     throw new Error(
       `Insufficient funds. Required: ${totalRequired} sats, Available: ${userTotal} sats`,
     );
   }
 
-  // Create commit transaction PSBT
   const commitPsbt = new bitcoin.Psbt();
 
-  // #TODO: Clean this up later
-  // When adding inputs to the commit PSBT
   for (const utxo of userWallet.utxos) {
-    // For P2SH addresses (starting with '3')
     if (userWallet.paymentAddress.startsWith("3")) {
       if (!userWallet.paymentPublicKey) {
         throw new Error("Payment public key is required for P2SH addresses");
       }
-
       const publicKeyBuffer = Buffer.from(userWallet.paymentPublicKey, "hex");
-
-      // Create a P2WPKH payment object (for nested SegWit in P2SH)
       const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer });
-
-      // Add the input with the required redeemScript
       commitPsbt.addInput({
         hash: utxo.txid,
         index: utxo.vout,
@@ -146,7 +77,6 @@ export async function prepareCommitTx(
         redeemScript: p2wpkh.output,
       });
     } else {
-      // Default handling for non-P2SH addresses
       commitPsbt.addInput({
         hash: utxo.txid,
         index: utxo.vout,
@@ -158,15 +88,11 @@ export async function prepareCommitTx(
     }
   }
 
-  /* Add outputs to commit transaction */
-
-  // Output 0: Taproot output for the inscription reveal
   commitPsbt.addOutput({
-    script: taprootPayment.output,
-    value: BigInt(DUST_LIMIT),
+    script: inscriptionData.taprootRevealScript,
+    value: BigInt(inscriptionData.taprootRevealValue),
   });
 
-  // Output 1: Change back to user
   const changeAmount = userTotal - totalRequired;
   if (changeAmount > DUST_LIMIT) {
     commitPsbt.addOutput({
@@ -178,91 +104,11 @@ export async function prepareCommitTx(
   return {
     commitPsbt: commitPsbt.toBase64(),
     commitFee,
-    taprootRevealScript: taprootPayment.output,
-    taprootRevealValue: DUST_LIMIT,
-    revealFee,
-    postage,
-    controlBlock,
-    inscriptionScript,
-  };
-}
-
-/**
- * Creates reveal parameters from the ordinals public key
- */
-export function createRevealParams(
-  ordinalsPublicKey: string | Uint8Array,
-  options?: {
-    text?: string;
-    feeRate?: number;
-    postage?: number;
-    paymentPublicKey?: string;
-  },
-) {
-  // Set default values
-  const text = options?.text || "Minting coming soon...";
-  const feeRate = options?.feeRate || DEFAULT_FEE_RATE;
-  const postage = options?.postage || DUST_LIMIT;
-  const paymentPublicKey = options?.paymentPublicKey;
-
-  // Get the xonly pubkey
-  let pubkey: Uint8Array;
-  if (typeof ordinalsPublicKey === "string") {
-    pubkey = hexToBytes(ordinalsPublicKey);
-    // Check if it's not x-only and convert if needed
-    if (pubkey.length === 33) {
-      pubkey = pubkey.slice(1); // Convert to x-only format
-    }
-  } else {
-    pubkey = ordinalsPublicKey;
-    if (pubkey.length === 33) {
-      pubkey = pubkey.slice(1); // Convert to x-only format
-    }
-  }
-
-  const inscriptionContent = Buffer.from(text);
-  const contentType = Buffer.from("text/plain;charset=utf-8");
-
-  const inscriptionScript = createInscriptionScript(
-    pubkey,
-    contentType,
-    inscriptionContent,
-  );
-
-  const scriptTree = {
-    output: inscriptionScript,
-    version: 0xc0,
-  };
-
-  const taprootPayment = bitcoin.payments.p2tr({
-    internalPubkey: pubkey,
-    scriptTree,
-    redeem: {
-      output: inscriptionScript,
-      redeemVersion: 0xc0,
-    },
-  });
-
-  if (
-    !taprootPayment.output ||
-    !taprootPayment.address ||
-    !taprootPayment.witness
-  ) {
-    throw new Error("Failed to generate taproot payment");
-  }
-
-  const controlBlock =
-    taprootPayment.witness[taprootPayment.witness.length - 1];
-
-  const revealFee = estimateRevealFee(inscriptionContent.length, feeRate);
-
-  return {
-    taprootRevealScript: taprootPayment.output,
-    taprootRevealValue: DUST_LIMIT, // Set to exactly DUST_LIMIT
-    controlBlock,
-    inscriptionScript,
-    postage,
-    revealFee,
-    paymentPublicKey,
+    taprootRevealScript: inscriptionData.taprootRevealScript,
+    taprootRevealValue: inscriptionData.taprootRevealValue,
+    revealFee: inscriptionData.revealFee,
+    postage: inscriptionData.postage,
+    controlBlock: inscriptionData.controlBlock,
+    inscriptionScript: inscriptionData.inscriptionScript,
   };
 }

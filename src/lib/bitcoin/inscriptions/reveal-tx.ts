@@ -3,9 +3,6 @@ import { calculateExpectedTxId } from "../core/inscription-utils";
 import { mempoolClient } from "../../external/mempool-client";
 import { DUST_LIMIT } from "../../constants";
 
-/**
- * Interface for reveal transaction preparation result
- */
 export type RevealPsbtResult = {
   revealPsbt: string;
   revealFee: number;
@@ -13,10 +10,6 @@ export type RevealPsbtResult = {
   inputSigningMap: { index: number; address: string }[];
 };
 
-/**
- * Prepares the reveal transaction for an inscription
- * Takes the actual transaction ID of the broadcasted commit transaction
- */
 export async function prepareRevealTx(
   commitTxid: string,
   userOrdinalsAddress: string,
@@ -33,13 +26,11 @@ export async function prepareRevealTx(
 ): Promise<RevealPsbtResult> {
   const revealPsbt = new bitcoin.Psbt();
 
-  // Track which inputs need to be signed with which address
   const inputSigningMap: { index: number; address: string }[] = [];
 
-  // Add input from commit transaction (to be signed with ordinals key)
   revealPsbt.addInput({
     hash: commitTxid,
-    index: 0, // The first output is the taproot output
+    index: 0,
     witnessUtxo: {
       script: revealParams.taprootRevealScript,
       value: BigInt(revealParams.taprootRevealValue),
@@ -109,13 +100,13 @@ export async function prepareRevealTx(
 
   revealPsbt.addOutput({
     address: userOrdinalsAddress,
-    value: BigInt(DUST_LIMIT), // Always use DUST_LIMIT for the ordinal output
+    value: BigInt(DUST_LIMIT),
   });
 
   const inputAmount = revealParams.taprootRevealValue + selectedUtxo.value;
   const outputAmount = DUST_LIMIT;
 
-  const estimatedSize = 200; //#TODO:Improve this later
+  const estimatedSize = 200;
   const feeRate =
     revealParams.revealFee > 0
       ? Math.ceil(revealParams.revealFee / estimatedSize)

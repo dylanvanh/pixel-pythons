@@ -18,31 +18,27 @@ const TRAIT_LAYERS = [
 ];
 
 const imageFormat = { width: 24, height: 24 };
-const outputDir = path.join(process.cwd(), "public", "generated");
 
 /**
- * Generate a composite image for a given address and mint index.
+ * Generate a composite image buffer for a given address and mint index.
  * @param address Ordinals address
  * @param mintIndex Mint index
- * @param outputPath Path to save the generated PNG
+ * @returns Promise<Buffer> The generated image as a PNG buffer.
  */
-export async function generateImageForMintCanvas(
+export async function generateImageBufferForMint(
   address: string,
   mintIndex: number,
-  outputPath: string,
-): Promise<void> {
+): Promise<Buffer> {
   const canvas = createCanvas(imageFormat.width, imageFormat.height);
   const ctx = canvas.getContext("2d");
 
-  // Get trait options for each layer
-  const traitOptions = TRAIT_LAYERS.map((layer) =>
+  const traitOptionsPromises = TRAIT_LAYERS.map((layer) =>
     fs
       .readdir(layer.dir)
       .then((files) => files.filter((f) => f.endsWith(".png")).sort()),
   );
-  const resolvedTraitOptions = await Promise.all(traitOptions);
+  const resolvedTraitOptions = await Promise.all(traitOptionsPromises);
 
-  // Use your deterministic trait selection function
   const indices = getTraitIndices(address, mintIndex, resolvedTraitOptions);
 
   // Draw background first
@@ -63,7 +59,5 @@ export async function generateImageForMintCanvas(
     }
   }
 
-  // Save the image
-  await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(outputPath, canvas.toBuffer("image/png"));
+  return canvas.toBuffer("image/png");
 }

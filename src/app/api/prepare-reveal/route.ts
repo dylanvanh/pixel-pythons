@@ -1,35 +1,64 @@
 import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
-import { createRevealParams } from "@/lib/bitcoin/inscriptions/commit-tx";
+import { generateInscriptionData } from "@/lib/bitcoin/inscriptions/generate-inscription-data";
 
 export async function POST(request: Request) {
   try {
-    // Get parameters from the request body
-    const { commitTxid, ordinalsAddress, ordinalsPublicKey, paymentAddress, paymentPublicKey, feeRate } =
-      await request.json();
-
-    // Validate required parameters
-    if (!commitTxid || !ordinalsAddress || !ordinalsPublicKey || !paymentAddress) {
-      return Response.json(
-        { error: "Missing required parameters" },
-        { status: 400 },
-      );
-    }
-
-    console.log("Creating reveal transaction with:", {
+    const {
       commitTxid,
       ordinalsAddress,
       ordinalsPublicKey,
       paymentAddress,
       paymentPublicKey,
       feeRate,
+    } = await request.json();
+
+    const mintIndex = 2;
+
+    if (
+      !commitTxid ||
+      !ordinalsAddress ||
+      !ordinalsPublicKey ||
+      !paymentAddress ||
+      typeof mintIndex !== "number"
+    ) {
+      return Response.json(
+        {
+          error:
+            "Missing required parameters (commitTxid, ordinalsAddress, ordinalsPublicKey, paymentAddress, mintIndex)",
+        },
+        { status: 400 },
+      );
+    }
+
+    console.log("Calling shared function for reveal transaction parameters:", {
+      commitTxid,
+      ordinalsAddress,
+      ordinalsPublicKey: ordinalsPublicKey.substring(0, 10) + "...",
+      paymentAddress,
+      paymentPublicKey: paymentPublicKey
+        ? paymentPublicKey.substring(0, 10) + "..."
+        : "N/A",
+      mintIndex,
+      feeRate,
     });
 
-    // Recreate reveal parameters from the ordinals public key
-    const revealParams = createRevealParams(ordinalsPublicKey, { 
-      // feeRate,
-      feeRate: 3,
-      paymentPublicKey 
-    });
+    const inscriptionData = await generateInscriptionData(
+      ordinalsAddress,
+      mintIndex,
+      ordinalsPublicKey,
+      feeRate,
+    );
+
+    // Construct revealParams using data from the shared function
+    const revealParams = {
+      taprootRevealScript: inscriptionData.taprootRevealScript,
+      taprootRevealValue: inscriptionData.taprootRevealValue,
+      controlBlock: inscriptionData.controlBlock,
+      inscriptionScript: inscriptionData.inscriptionScript,
+      postage: inscriptionData.postage,
+      revealFee: inscriptionData.revealFee,
+      paymentPublicKey,
+    };
 
     // Prepare the reveal transaction
     const revealResult = await prepareRevealTx(

@@ -2,7 +2,6 @@ import { prepareCommitTx } from "@/lib/bitcoin/inscriptions/commit-tx";
 
 export async function POST(request: Request) {
   try {
-    // Get parameters from the request body
     const {
       paymentAddress,
       ordinalsAddress,
@@ -11,15 +10,20 @@ export async function POST(request: Request) {
       feeRate,
     } = await request.json();
 
-    // Validate required parameters
+    const mintIndex = 2;
+
     if (
       !paymentAddress ||
       !ordinalsAddress ||
       !ordinalsPublicKey ||
-      !paymentPublicKey
+      !paymentPublicKey ||
+      typeof mintIndex !== "number"
     ) {
       return Response.json(
-        { error: "Missing required parameters" },
+        {
+          error:
+            "Missing required parameters (paymentAddress, ordinalsAddress, ordinalsPublicKey, paymentPublicKey, mintIndex)",
+        },
         { status: 400 },
       );
     }
@@ -30,6 +34,7 @@ export async function POST(request: Request) {
       ordinalsPublicKey,
       paymentPublicKey,
       feeRate,
+      mintIndex,
     });
 
     // Prepare the commit transaction
@@ -37,16 +42,27 @@ export async function POST(request: Request) {
       paymentAddress,
       ordinalsAddress,
       ordinalsPublicKey,
+      mintIndex,
       {
         feeRate,
         paymentPublicKey,
       },
     );
 
-    // Return the commit transaction data (without reveal params)
+    // Return the commit transaction data AND necessary reveal parameters
     return Response.json({
       commitPsbt: commitResult.commitPsbt,
       commitFee: commitResult.commitFee,
+      controlBlock: Buffer.from(commitResult.controlBlock).toString("hex"),
+      inscriptionScript: Buffer.from(commitResult.inscriptionScript).toString(
+        "hex",
+      ),
+      taprootRevealScript: Buffer.from(
+        commitResult.taprootRevealScript,
+      ).toString("hex"),
+      taprootRevealValue: commitResult.taprootRevealValue,
+      revealFee: commitResult.revealFee,
+      postage: commitResult.postage,
     });
   } catch (error) {
     console.error("Error preparing commit transaction:", error);
@@ -59,4 +75,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
