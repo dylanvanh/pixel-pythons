@@ -1,4 +1,5 @@
 import { prepareCommitTx } from "@/lib/bitcoin/inscriptions/commit-tx";
+import { mempoolClient } from "@/lib/external/mempool-client";
 
 export async function POST(request: Request) {
   try {
@@ -7,10 +8,11 @@ export async function POST(request: Request) {
       ordinalsAddress,
       ordinalsPublicKey,
       paymentPublicKey,
-      feeRate,
     } = await request.json();
 
     const mintIndex = 2;
+
+    const fastFeeRate = await mempoolClient.getFastestFee();
 
     if (
       !paymentAddress ||
@@ -33,7 +35,7 @@ export async function POST(request: Request) {
       ordinalsAddress,
       ordinalsPublicKey,
       paymentPublicKey,
-      feeRate,
+      feeRate: fastFeeRate,
       mintIndex,
     });
 
@@ -44,7 +46,7 @@ export async function POST(request: Request) {
       ordinalsPublicKey,
       mintIndex,
       {
-        feeRate,
+        feeRate: fastFeeRate,
         paymentPublicKey,
       },
     );

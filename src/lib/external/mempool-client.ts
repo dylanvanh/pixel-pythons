@@ -55,6 +55,11 @@ export class MempoolClient extends ApiClient {
     return `${process.env.MEMPOOL_URL}/api`;
   }
 
+  async getFastestFee(): Promise<number> {
+    const recommendedFees = await this.getRecommendedFees();
+    return recommendedFees.fastestFee;
+  }
+
   async getTransaction(txid: string): Promise<Transaction> {
     return this.api.get(`/tx/${txid}`).then((response) => response.data);
   }
