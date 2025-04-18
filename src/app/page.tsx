@@ -1,5 +1,4 @@
 import { MintForm } from "@/components/MintForm";
-import { RecentMints } from "@/components/RecentMints";
 import { WalletInfo } from "@/components/WalletInfo";
 
 export default function Home() {
@@ -9,7 +8,7 @@ export default function Home() {
         <div className="max-w-md w-full mx-auto">
           <WalletInfo className="mb-4" />
           <MintForm />
-          <RecentMints />
+          {/* <RecentMints /> */}
         </div>
       </main>
     </div>
