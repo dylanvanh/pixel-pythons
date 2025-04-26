@@ -11,7 +11,6 @@ export type UTXO = {
   };
   value: number;
 };
-
 export type RecommendedFees = {
   fastestFee: number;
   halfHourFee: number;
@@ -19,23 +18,24 @@ export type RecommendedFees = {
   economyFee: number;
   minimumFee: number;
 };
-
-interface TransactionPrevout {
+type TransactionPrevout = {
   scriptpubkey_type: string;
   value: number;
-}
-interface TransactionVin {
+};
+type TransactionVin = {
   prevout: TransactionPrevout;
   witness?: string[];
-}
-interface TransactionVout {
+};
+type TransactionVout = {
   scriptpubkey_type: string;
+  scriptpubkey?: string;
+  scriptpubkey_address?: string;
   value: number;
-}
-interface Transaction {
+};
+type Transaction = {
   vin: TransactionVin[];
   vout: TransactionVout[];
-}
+};
 
 export class MempoolClient extends ApiClient {
   private static instance: MempoolClient | null = null;
