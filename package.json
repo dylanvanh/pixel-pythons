@@ -43,5 +43,10 @@
     "postcss": "^8",
     "tailwindcss": "^4.1.1",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "buildScript": [
+      "canvas build"
+    ]
   }
 }
