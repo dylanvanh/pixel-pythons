@@ -1,3 +1,8 @@
 export const DUST_LIMIT = 546;
+
 export const DEFAULT_FEE_RATE = 1;
 export const DEFAULT_POSTAGE = DUST_LIMIT;
+
+export const PARENT_INSCRIPTION_ID = process.env.PARENT_INSCRIPTION_ID!;
+
+export const ORACLE_TAPROOT_ADDRESS = process.env.ORACLE_TAPROOT_ADDRESS!;

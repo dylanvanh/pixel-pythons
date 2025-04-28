@@ -45,12 +45,11 @@ export async function prepareCommitTx(
   );
 
   const commitFee = estimateCommitFee(userWallet.utxos.length, feeRate);
-  const totalRequired = commitFee + inscriptionData.taprootRevealValue + 1000;
+  const totalRequired = commitFee + inscriptionData.taprootRevealValue + 400;
 
-  const userTotal = userWallet.utxos.reduce(
-    (sum, utxo) => sum + Math.floor(utxo.value),
-    0,
-  );
+  const userTotal = userWallet.utxos
+    .filter((utxo) => Math.floor(utxo.value) > DUST_LIMIT)
+    .reduce((sum, utxo) => sum + Math.floor(utxo.value), 0);
 
   if (userTotal < totalRequired) {
     throw new Error(

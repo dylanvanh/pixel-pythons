@@ -10,7 +10,7 @@ export async function POST(request: Request) {
       paymentPublicKey,
     } = await request.json();
 
-    const mintIndex = 2;
+    const mintIndex = 9;
 
     const fastFeeRate = await mempoolClient.getFastestFee();
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       ordinalsPublicKey,
       mintIndex,
       {
-        feeRate: fastFeeRate,
+        feeRate: 1,
         paymentPublicKey,
       },
     );

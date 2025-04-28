@@ -21,6 +21,7 @@ export type RecommendedFees = {
 type TransactionPrevout = {
   scriptpubkey_type: string;
   value: number;
+  scriptpubkey_address: string;
 };
 type TransactionVin = {
   prevout: TransactionPrevout;
@@ -38,17 +39,8 @@ type Transaction = {
 };
 
 export class MempoolClient extends ApiClient {
-  private static instance: MempoolClient | null = null;
-
-  private constructor() {
+  constructor() {
     super(MempoolClient.getBaseUrl());
-  }
-
-  public static getInstance(): MempoolClient {
-    if (!MempoolClient.instance) {
-      MempoolClient.instance = new MempoolClient();
-    }
-    return MempoolClient.instance;
   }
 
   private static getBaseUrl(): string {
@@ -78,7 +70,7 @@ export class MempoolClient extends ApiClient {
 
   async getUTXOs(address: string): Promise<UTXO[]> {
     return this.api
-      .get(`/address/${address}/utxo`)
+      .get(`/address/${address}/utxo?_=${Date.now()}`)
       .then((response) => response.data);
   }
 
@@ -93,4 +85,4 @@ export class MempoolClient extends ApiClient {
   }
 }
 
-export const mempoolClient = MempoolClient.getInstance();
+export const mempoolClient = new MempoolClient();

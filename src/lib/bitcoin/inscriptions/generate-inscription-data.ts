@@ -38,15 +38,17 @@ export async function generateInscriptionData(
   const content = imageBuffer;
 
   const userPubKey = Buffer.from(ordinalsPublicKey, "hex");
-  let xOnlyPubkey: Uint8Array;
+  let userXOnlyPubkey: Uint8Array;
   if (userPubKey.length === 32) {
-    xOnlyPubkey = Uint8Array.from(userPubKey);
+    userXOnlyPubkey = Uint8Array.from(userPubKey);
   } else {
-    xOnlyPubkey = secp256k1.xOnlyPointFromPoint(Uint8Array.from(userPubKey));
+    userXOnlyPubkey = secp256k1.xOnlyPointFromPoint(
+      Uint8Array.from(userPubKey),
+    );
   }
 
   const inscriptionScript = createInscriptionScript(
-    xOnlyPubkey,
+    userXOnlyPubkey,
     contentType,
     content,
   );
@@ -54,7 +56,7 @@ export async function generateInscriptionData(
   const scriptTree = { output: inscriptionScript, version: 0xc0 };
 
   const taprootPayment = bitcoin.payments.p2tr({
-    internalPubkey: xOnlyPubkey,
+    internalPubkey: userXOnlyPubkey,
     scriptTree,
     redeem: { output: inscriptionScript, redeemVersion: 0xc0 },
   });

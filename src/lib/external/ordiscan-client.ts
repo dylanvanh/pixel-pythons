@@ -13,7 +13,7 @@ export type Inscription = {
   contentUrl: string;
 };
 
-type InscriptionApiResponse = {
+type InscriptionApiPayload = {
   inscription_id: string;
   inscription_number: number;
   content_type: string;
@@ -27,27 +27,35 @@ type InscriptionApiResponse = {
 };
 
 export class OrdiscanClient extends ApiClient {
-  private static instance: OrdiscanClient | null = null;
-
-  private constructor() {
+  constructor() {
     super(OrdiscanClient.getBaseUrl());
-  }
 
-  public static getInstance(): OrdiscanClient {
-    if (!OrdiscanClient.instance) {
-      OrdiscanClient.instance = new OrdiscanClient();
-    }
-    return OrdiscanClient.instance;
+    const apiKey = process.env.ORDISCAN_API_KEY!;
+    this.api.defaults.headers.common["Authorization"] = `Bearer ${apiKey}`;
   }
 
   private static getBaseUrl(): string {
-    return `${process.env.ORDISCAN_URL}`;
+    const baseUrl = process.env.ORDISCAN_URL;
+    if (!baseUrl) {
+      throw new Error("ORDISCAN_URL environment variable is not set.");
+    }
+    return baseUrl;
   }
 
   async getInscriptionInfo(inscriptionId: string): Promise<Inscription> {
     const response = await this.api
-      .get<InscriptionApiResponse>(`/inscription/${inscriptionId}`)
-      .then((response) => response.data);
+      .get<{ data: InscriptionApiPayload }>( // Expect { data: { data: Payload } } from raw response
+        `/inscription/${inscriptionId}`,
+      )
+      .then((axiosResponse) => {
+        const innerData = axiosResponse?.data?.data;
+        if (!innerData) {
+          throw new Error(
+            "Invalid nested API response structure received from Ordiscan.",
+          );
+        }
+        return innerData;
+      });
 
     return {
       inscriptionId: response.inscription_id,
@@ -64,4 +72,4 @@ export class OrdiscanClient extends ApiClient {
   }
 }
 
-export const mempoolClient = OrdiscanClient.getInstance();
+export const ordiscanClient = new OrdiscanClient();

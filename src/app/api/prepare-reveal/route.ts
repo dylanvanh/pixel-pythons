@@ -1,5 +1,5 @@
-import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
 import { generateInscriptionData } from "@/lib/bitcoin/inscriptions/generate-inscription-data";
+import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
 import { mempoolClient } from "@/lib/external/mempool-client";
 
 export async function POST(request: Request) {
@@ -12,7 +12,8 @@ export async function POST(request: Request) {
       paymentPublicKey,
     } = await request.json();
 
-    const mintIndex = 2;
+    const mintIndex = 9;
+
     const fastFeeRate = await mempoolClient.getFastestFee();
 
     if (
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       ordinalsAddress,
       mintIndex,
       ordinalsPublicKey,
-      fastFeeRate,
+      1,
     );
 
     // Construct revealParams using data from the shared function
@@ -68,6 +69,8 @@ export async function POST(request: Request) {
       paymentAddress,
       revealParams,
     );
+
+    console.log("Reveal result:", revealResult);
 
     // Return the reveal transaction data
     return Response.json({

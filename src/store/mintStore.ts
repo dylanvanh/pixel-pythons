@@ -268,9 +268,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       }).then(async (response) => {
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(
-            data.error || "Failed to prepare reveal transaction",
-          );
+          throw new Error(data.error || "Failed to prepare reveal transaction");
         }
         return response.json();
       });
@@ -281,25 +279,28 @@ export const useMintStore = create<MintState>((set, get) => ({
 
       // Log the input signing map to help with debugging
       console.log("Reveal PSBT input signing map:", result.inputSigningMap);
-      
+
       // The available addresses we can sign with
-      const availableAddresses = [ordinalsAddress, paymentAddress].filter(Boolean);
+      const availableAddresses = [ordinalsAddress, paymentAddress].filter(
+        Boolean,
+      );
       console.log("Available addresses for signing:", availableAddresses);
-      
+
       // Determine which inputs we can sign with our available addresses
-      const inputsToSign = result.inputSigningMap ? 
-        result.inputSigningMap.filter((input: { index: number; address: string }) => 
-          availableAddresses.includes(input.address)
-        ) : 
-        // If no input signing map provided, default to index 0 with ordinals address
-        [{ index: 0, address: ordinalsAddress }];
-        
+      const inputsToSign = result.inputSigningMap
+        ? result.inputSigningMap.filter(
+            (input: { index: number; address: string }) =>
+              availableAddresses.includes(input.address),
+          )
+        : // If no input signing map provided, default to index 0 with ordinals address
+          [{ index: 0, address: ordinalsAddress }];
+
       if (inputsToSign.length === 0) {
         throw new Error(
-          `None of your available addresses (${availableAddresses.join(', ')}) match the required signing addresses in the input map.`
+          `None of your available addresses (${availableAddresses.join(", ")}) match the required signing addresses in the input map.`,
         );
       }
-      
+
       console.log(`Found ${inputsToSign.length} inputs to sign:`, inputsToSign);
 
       // Sign and broadcast in a single operation
@@ -313,13 +314,13 @@ export const useMintStore = create<MintState>((set, get) => ({
       if (!signResult.txId) {
         throw new Error("No transaction ID returned from signing");
       }
-      
+
       // Update state with results
       setRevealTxid(signResult.txId);
       setRevealSigned(true);
       setRevealBroadcasted(true);
       setMintStep("success");
-      
+
       if (result.expectedInscriptionId) {
         console.log("Expected inscription ID:", result.expectedInscriptionId);
       }

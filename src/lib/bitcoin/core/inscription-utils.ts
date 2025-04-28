@@ -1,4 +1,5 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
+import { PARENT_INSCRIPTION_ID } from "@/lib/constants";
 
 /**
  * Creates an inscription script for ordinals
@@ -13,6 +14,8 @@ export function createInscriptionScript(
     ? content
     : Buffer.from(content);
 
+  const parentInscriptionId = PARENT_INSCRIPTION_ID;
+
   // Calculate how many chunks we need due to Bitcoin's push limit
   const MAX_CHUNK_SIZE = 520;
   const contentChunks: Buffer[] = [];
@@ -26,6 +29,25 @@ export function createInscriptionScript(
     currentPos += chunkSize;
   }
 
+  // Prepare parent push elements if a parent ID is provided
+  const parentTagElements: Array<Uint8Array | number> = parentInscriptionId
+    ? (() => {
+        const [hex, indexStr] = parentInscriptionId.split("i");
+        // parse txid and reverse bytes to get raw binary
+        const txidBytes = hexToBytes(hex).reverse();
+        // little-endian index
+        const indexNum = parseInt(indexStr, 10) || 0;
+        const indexBuffer = Buffer.alloc(4);
+        indexBuffer.writeUInt32LE(indexNum, 0);
+        // strip trailing zeroes
+        let idx = indexBuffer.length - 1;
+        while (idx >= 0 && indexBuffer[idx] === 0) idx--;
+        const indexBytes = indexBuffer.slice(0, idx + 1);
+        const parentBytes = Buffer.concat([Buffer.from(txidBytes), indexBytes]);
+        return [bitcoin.opcodes.OP_3, Uint8Array.from(parentBytes)];
+      })()
+    : [];
+
   const scriptElements = [
     Uint8Array.from(xOnlyPubkey),
     bitcoin.opcodes.OP_CHECKSIG,
@@ -34,6 +56,7 @@ export function createInscriptionScript(
     Uint8Array.from(Buffer.from("ord", "utf8")),
     bitcoin.opcodes.OP_1,
     Uint8Array.from(contentType),
+    ...parentTagElements,
     bitcoin.opcodes.OP_0,
     ...contentChunks.map((chunk) => Uint8Array.from(chunk)),
     bitcoin.opcodes.OP_ENDIF,
