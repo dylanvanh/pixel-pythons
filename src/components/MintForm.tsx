@@ -129,7 +129,7 @@ export function MintForm() {
           txId: response?.txId,
         };
       }
-      
+
       // When options is passed as an object, ensure finalize and broadcast are forwarded
       const objOptions = options as {
         tx: string;
@@ -137,16 +137,20 @@ export function MintForm() {
         broadcast?: boolean;
         inputsToSign: { index: number; address: string }[];
       };
-      
+
       // Make sure we pass through the finalize and broadcast flags that were provided
       const response = await laserEyesSignPsbt({
         ...objOptions,
-        finalize: objOptions.finalize !== undefined ? objOptions.finalize : finalize,
-        broadcast: objOptions.broadcast !== undefined ? objOptions.broadcast : broadcast
+        finalize:
+          objOptions.finalize !== undefined ? objOptions.finalize : finalize,
+        broadcast:
+          objOptions.broadcast !== undefined ? objOptions.broadcast : broadcast,
       });
-      
+
       return {
-        psbt: response?.signedPsbtHex ? bitcoin.Psbt.fromHex(response.signedPsbtHex).toBase64() : response?.signedPsbtBase64,
+        psbt: response?.signedPsbtHex
+          ? bitcoin.Psbt.fromHex(response.signedPsbtHex).toBase64()
+          : response?.signedPsbtBase64,
         txId: response?.txId,
       };
     },
@@ -264,7 +268,7 @@ export function MintForm() {
                 transactions.commitTxid &&
                 !isLoading && (
                   <a
-                    href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                    href={`https://ordiscan.com/tx/${transactions.commitTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
@@ -302,7 +306,7 @@ export function MintForm() {
                   !isLoading && (
                     <div className="mt-2">
                       <a
-                        href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                        href={`https://ordiscan.com/tx/${transactions.commitTxid}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
@@ -336,7 +340,7 @@ export function MintForm() {
                 transactions.revealTxid &&
                 !isLoading && (
                   <a
-                    href={`https://mempool.space/tx/${transactions.revealTxid}`}
+                    href={`https://ordiscan.com/tx/${transactions.revealTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center px-4 border-4 border-black font-bold text-black hover:bg-blue-300 transition-colors"
@@ -367,7 +371,7 @@ export function MintForm() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Commit TX:</span>
                   <a
-                    href={`https://mempool.space/tx/${transactions.commitTxid}`}
+                    href={`https://ordiscan.com/tx/${transactions.commitTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
@@ -379,7 +383,7 @@ export function MintForm() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold">Reveal TX:</span>
                   <a
-                    href={`https://mempool.space/tx/${transactions.revealTxid}`}
+                    href={`https://ordiscan.com/tx/${transactions.revealTxid}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="underline decoration-2 decoration-black underline-offset-4 font-medium hover:bg-blue-300 transition-colors px-2"
@@ -433,12 +437,12 @@ function WalletSelectorContent({
     <>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {Object.values(SUPPORTED_WALLETS)
-          .filter(wallet => wallet.name === XVERSE || wallet.name === LEATHER)
+          .filter((wallet) => wallet.name === XVERSE || wallet.name === LEATHER)
           .sort((a, b) => {
             // Ensure XVERSE is always first
             if (a.name === XVERSE) return -1;
             if (b.name === XVERSE) return 1;
-            
+
             // For other wallets, maintain installation-based sort
             const aInstalled =
               walletStatusMap[a.name as keyof typeof walletStatusMap];
