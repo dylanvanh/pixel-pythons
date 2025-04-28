@@ -32,7 +32,7 @@ export async function generateImageBufferForMint(
 
   const traitOptionsPromises = TRAIT_LAYERS.map((layer) =>
     fs
-      .readdir(layer.dir)
+      .readdir(path.join(process.cwd(), layer.dir))
       .then((files) => files.filter((f) => f.endsWith(".png")).sort()),
   );
   const resolvedTraitOptions = await Promise.all(traitOptionsPromises);
@@ -40,10 +40,7 @@ export async function generateImageBufferForMint(
   const indices = getTraitIndices(address, mintIndex, resolvedTraitOptions);
 
   // Draw background first
-  const bgPath = path.join(
-    TRAIT_LAYERS[0].dir,
-    resolvedTraitOptions[0][indices[0]],
-  );
+  const bgPath = path.join(process.cwd(), TRAIT_LAYERS[0].dir, resolvedTraitOptions[0][indices[0]]);
   const bgImg = await loadImage(bgPath);
   ctx.drawImage(bgImg, 0, 0, imageFormat.width, imageFormat.height);
 
@@ -51,7 +48,7 @@ export async function generateImageBufferForMint(
   for (let i = 1; i < TRAIT_LAYERS.length; i++) {
     const traitFile = resolvedTraitOptions[i][indices[i]];
     if (traitFile && traitFile !== "N/A") {
-      const traitPath = path.join(TRAIT_LAYERS[i].dir, traitFile);
+      const traitPath = path.join(process.cwd(), TRAIT_LAYERS[i].dir, traitFile);
       const traitImg = await loadImage(traitPath);
       ctx.drawImage(traitImg, 0, 0, imageFormat.width, imageFormat.height);
     }
