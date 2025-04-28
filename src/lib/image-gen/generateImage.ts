@@ -1,4 +1,5 @@
-import { createCanvas, loadImage } from "canvas";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
+
 import fs from "fs/promises";
 import path from "path";
 import { getTraitIndices } from "./traitSelector";
