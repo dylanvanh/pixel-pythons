@@ -1,64 +1,10 @@
-import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import { create } from "zustand";
-
-export type MintStep = "ready" | "commit" | "reveal" | "success";
-
-// Custom type for our LaserEyes wallet interface
-interface LaserEyesWallet {
-  ordinalAddress: string;
-  paymentAddress: string;
-  publicKey?: string;
-  paymentPublicKey?: string;
-  // Type that's compatible with LaserEyes' signPsbt
-  signPsbt: (
-    options:
-      | {
-          tx: string;
-          finalize?: boolean;
-          broadcast?: boolean;
-          inputsToSign: { index: number; address: string }[];
-        }
-      | string,
-    finalize?: boolean,
-    broadcast?: boolean,
-  ) => Promise<{ psbt?: string; txId?: string }>;
-}
-
-interface MintState {
-  mintStep: MintStep;
-  isLoading: boolean;
-  transactions: {
-    commitTxid: string;
-    revealTxid: string;
-    commitSigned: boolean;
-    revealSigned: boolean;
-    commitBroadcasted: boolean;
-    revealBroadcasted: boolean;
-  };
-
-  // Wallet and address states
-  walletProvider: LaserEyesWallet | null;
-  paymentAddress: string;
-  ordinalsAddress: string;
-
-  // Actions
-  setMintStep: (step: MintStep) => void;
-  setIsLoading: (loading: boolean) => void;
-  setCommitTxid: (txid: string) => void;
-  setRevealTxid: (txid: string) => void;
-  setCommitSigned: (signed: boolean) => void;
-  setRevealSigned: (signed: boolean) => void;
-  setCommitBroadcasted: (broadcasted: boolean) => void;
-  setRevealBroadcasted: (broadcasted: boolean) => void;
-  setWalletProvider: (provider: LaserEyesWallet | null) => void;
-  setAddresses: (paymentAddr: string, ordinalsAddr: string) => void;
-  resetMintProcess: () => void;
-
-  // Process flow
-  startMintProcess: () => Promise<void>;
-  signCommitTransaction: () => Promise<void>;
-  signRevealTransaction: () => Promise<void>;
-}
+import { internalApi } from "@/lib/internal-api-client";
+import { handleError } from "@/lib/error/handlers/error-handler";
+import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
+import { LaserEyesWallet, MintState, MintStep } from "./store-types";
+import { PrepareCommitRequest } from "@/lib/zod-types/commit-types";
+import { PrepareRevealRequest } from "@/lib/zod-types/reveal-types";
 
 // Create the store without persistence
 export const useMintStore = create<MintState>((set, get) => ({
@@ -115,7 +61,6 @@ export const useMintStore = create<MintState>((set, get) => ({
         };
       }
 
-      // With LaserEyes, we already have the addresses directly
       return {
         walletProvider: provider,
         paymentAddress: provider.paymentAddress,
@@ -169,28 +114,37 @@ export const useMintStore = create<MintState>((set, get) => ({
       return;
     }
 
+    // Add checks for public keys
+    if (!walletProvider.publicKey || !walletProvider.paymentPublicKey) {
+      console.error("Public keys not available from wallet provider");
+      handleError(
+        new Error("Public keys not available"),
+        "Missing Public Keys",
+      );
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Prepare commit transaction via API route
-      const commitResult = await fetch("/api/prepare-commit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          paymentAddress,
-          ordinalsAddress,
-          ordinalsPublicKey: walletProvider.publicKey,
-          paymentPublicKey: walletProvider.paymentPublicKey,
-        }),
-      }).then(async (response) => {
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to prepare commit transaction");
-        }
-        return response.json();
-      });
+      const payload: PrepareCommitRequest = {
+        paymentAddress,
+        ordinalsAddress,
+        ordinalsPublicKey: walletProvider.publicKey,
+        paymentPublicKey: walletProvider.paymentPublicKey,
+      };
+
+      const commitResult = await internalApi.post<{
+        commitPsbt: string;
+        commitFee: number;
+        controlBlock: string;
+        inscriptionScript: string;
+        taprootRevealScript: string;
+        taprootRevealValue: number;
+        revealFee: number;
+        postage: number;
+      }>("/api/prepare-commit", payload);
 
       console.log("commitResult", commitResult);
 
@@ -226,7 +180,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       }
     } catch (error) {
       console.error("Error signing commit transaction:", error);
-      alert(`Error signing commit transaction: ${error}`);
+      handleError(error, "Error signing commit transaction");
     } finally {
       setIsLoading(false);
     }
@@ -249,38 +203,42 @@ export const useMintStore = create<MintState>((set, get) => ({
       return;
     }
 
+    if (!walletProvider.publicKey || !walletProvider.paymentPublicKey) {
+      console.error(
+        "Public keys not available from wallet provider for reveal",
+      );
+      handleError(
+        new Error("Public keys not available"),
+        "Missing Public Keys for Reveal",
+      );
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // Prepare the reveal transaction via API
-      const result = await fetch("/api/prepare-reveal", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          commitTxid: get().transactions.commitTxid,
-          ordinalsAddress,
-          ordinalsPublicKey: walletProvider.publicKey,
-          paymentAddress,
-          paymentPublicKey: walletProvider.paymentPublicKey,
-        }),
-      }).then(async (response) => {
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to prepare reveal transaction");
-        }
-        return response.json();
-      });
+      const payload: PrepareRevealRequest = {
+        commitTxid: get().transactions.commitTxid,
+        ordinalsAddress,
+        ordinalsPublicKey: walletProvider.publicKey,
+        paymentAddress,
+        paymentPublicKey: walletProvider.paymentPublicKey,
+      };
+
+      const result = await internalApi.post<{
+        revealPsbt: string;
+        revealFee: number;
+        expectedInscriptionId: string;
+        inputSigningMap: { index: number; address: string }[];
+      }>("/api/prepare-reveal", payload);
 
       if (!result.revealPsbt) {
         throw new Error("Failed to prepare reveal PSBT");
       }
 
-      // Log the input signing map to help with debugging
       console.log("Reveal PSBT input signing map:", result.inputSigningMap);
 
-      // The available addresses we can sign with
       const availableAddresses = [ordinalsAddress, paymentAddress].filter(
         Boolean,
       );
@@ -315,7 +273,6 @@ export const useMintStore = create<MintState>((set, get) => ({
         throw new Error("No transaction ID returned from signing");
       }
 
-      // Update state with results
       setRevealTxid(signResult.txId);
       setRevealSigned(true);
       setRevealBroadcasted(true);
@@ -326,7 +283,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       }
     } catch (error) {
       console.error("Error signing reveal transaction:", error);
-      alert(`Error signing reveal transaction: ${error}`);
+      handleError(error, "Error signing reveal transaction");
     } finally {
       setIsLoading(false);
     }

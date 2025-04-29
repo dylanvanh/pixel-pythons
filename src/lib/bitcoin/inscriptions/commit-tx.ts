@@ -3,6 +3,8 @@ import { mempoolClient } from "../../external/mempool-client";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../constants";
 import { UserWalletInfo, estimateCommitFee } from "../core/inscription-utils";
 import { generateInscriptionData } from "./generate-inscription-data";
+import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
+import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
 
 export type CommitPsbtResult = {
   commitPsbt: string;
@@ -52,8 +54,8 @@ export async function prepareCommitTx(
     .reduce((sum, utxo) => sum + Math.floor(utxo.value), 0);
 
   if (userTotal < totalRequired) {
-    throw new Error(
-      `Insufficient funds. Required: ${totalRequired} sats, Available: ${userTotal} sats`,
+    throw new InsufficientFundsError(
+      `Insufficient funds. Required: ${totalRequired} sats, Available: ${userTotal} sats for payment address: ${userPaymentAddress}`,
     );
   }
 
@@ -62,7 +64,9 @@ export async function prepareCommitTx(
   for (const utxo of userWallet.utxos) {
     if (userWallet.paymentAddress.startsWith("3")) {
       if (!userWallet.paymentPublicKey) {
-        throw new Error("Payment public key is required for P2SH addresses");
+        throw new InvalidParametersError(
+          "Payment public key is required for P2SH (starts with '3') addresses",
+        );
       }
       const publicKeyBuffer = Buffer.from(userWallet.paymentPublicKey, "hex");
       const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer });

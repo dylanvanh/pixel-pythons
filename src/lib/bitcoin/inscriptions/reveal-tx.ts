@@ -4,6 +4,7 @@ import { DUST_LIMIT, ORACLE_TAPROOT_ADDRESS } from "../../constants";
 import { mempoolClient, UTXO } from "../../external/mempool-client";
 import { calculateExpectedTxId } from "../core/inscription-utils";
 import { signParentP2TRInput } from "../oracle/oracle";
+import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 
 export type RevealPsbtResult = {
   revealPsbt: string;
@@ -165,7 +166,7 @@ export async function prepareRevealTx(
   );
 
   if (totalAvailablePaymentValue < requiredFeeContribution) {
-    throw new Error(
+    throw new InsufficientFundsError(
       `Insufficient funds to cover reveal fee. Required: ${requiredFeeContribution} sats, Available: ${totalAvailablePaymentValue} sats`,
     );
   }
@@ -245,6 +246,9 @@ export async function prepareRevealTx(
   // Calculate fee based on known inputs and the two fixed outputs
   const changeAmount =
     totalInputValue - totalOutputValue - revealParams.revealFee;
+
+  console.log("Calculated changeAmount:", changeAmount);
+  console.log("Using estimated revealFee:", revealParams.revealFee);
 
   // Check if change is needed and exceeds dust
   if (changeAmount > DUST_LIMIT) {
