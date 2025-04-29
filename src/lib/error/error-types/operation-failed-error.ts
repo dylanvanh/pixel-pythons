@@ -12,3 +12,4 @@ export class OperationFailedError extends AppError {
     );
   }
 }
+

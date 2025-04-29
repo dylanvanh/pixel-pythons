@@ -7,7 +7,8 @@ import { InsufficientFundsError } from "./error/error-types/insufficient-funds-e
 import { InvalidParametersError } from "./error/error-types/invalid-parameters-error";
 import { NetworkError } from "./error/error-types/network-error";
 import { SigningFailedError } from "./error/error-types/signing-failed-error";
-import { OperationFailedError } from "./error/error-types/transaction-failed-error";
+import { OperationFailedError } from "./error/error-types/operation-failed-error";
+import { BroadcastFailedError } from "./error/error-types/broadcast-failed-error";
 
 /**
  * Client for making API requests to internal Next.js API routes
@@ -48,6 +49,8 @@ class InternalApiClient {
                 throw new NetworkError(message);
               case ErrorCode.SIGNING_FAILED:
                 throw new SigningFailedError(message);
+              case ErrorCode.BROADCAST_FAILED:
+                throw new BroadcastFailedError(message);
               default:
                 throw new AppError(message, errorData.code);
             }

@@ -4,6 +4,7 @@ export enum ErrorCode {
   OPERATION_FAILED = "OPERATION_FAILED",
   NETWORK_ERROR = "NETWORK_ERROR",
   SIGNING_FAILED = "SIGNING_FAILED",
+  BROADCAST_FAILED = "BROADCAST_FAILED",
 }
 
 export interface ApiErrorResponse {
@@ -17,7 +18,7 @@ export function createApiError(
   message: string,
   details?: string,
 ): ApiErrorResponse {
-  // console.error(code, message, details);
+  console.error(code, message, details);
   return { code, error: message, details };
 }
 
@@ -30,4 +31,4 @@ export function isApiErrorResponse(obj: unknown): obj is ApiErrorResponse {
     typeof (obj as ApiErrorResponse).error === "string" &&
     Object.values(ErrorCode).includes((obj as ApiErrorResponse).code)
   );
-} 
+}

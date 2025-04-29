@@ -8,7 +8,6 @@ export default function Home() {
         <div className="max-w-md w-full mx-auto">
           <WalletInfo className="mb-4" />
           <MintForm />
-          {/* <RecentMints /> */}
         </div>
       </main>
     </div>
