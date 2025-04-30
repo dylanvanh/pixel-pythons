@@ -1,13 +1,10 @@
 import Link from "next/link";
+import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions";
+import { OrdinalImage } from "@/components/OrdinalImage";
+import { PARENT_INSCRIPTION_ID } from "@/lib/constants";
 
-export default function CollectionPage() {
-  // Mock data for inscribed ordinals - this would come from your API/database
-  const ordinals = Array.from({ length: 100 }, (_, i) => ({
-    id: i + 1,
-    number: `#${(i + 1).toString().padStart(3, "0")}`,
-    // Generate different gradients for variety
-    image: `linear-gradient(to bottom right, ${getRandomColor()}, ${getRandomColor()})`,
-  }));
+export default async function CollectionPage() {
+  const inscriptions = await fetchInscriptions();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -23,42 +20,53 @@ export default function CollectionPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {ordinals.map((ordinal) => (
-              <div
-                key={ordinal.id}
-                className="border-4 border-black aspect-square shadow-[5px_5px_0px_0px_rgba(0,0,0)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0)] transition-all duration-200"
-                style={{ background: ordinal.image }}
+          {PARENT_INSCRIPTION_ID && (
+            <div className="mb-8 flex flex-col items-center">
+              <a
+                href={`https://ordiscan.com/inscription/${PARENT_INSCRIPTION_ID}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border-4 border-yellow-500 aspect-square w-48 h-48 shadow-lg bg-white flex flex-col items-center justify-center relative cursor-pointer"
               >
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="font-bold text-white text-lg">
-                    {ordinal.number}
-                  </span>
+                <OrdinalImage
+                  src={`https://ordinals.com/content/${PARENT_INSCRIPTION_ID}`}
+                  alt="Parent Inscription"
+                />
+                <span className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded shadow">
+                  Parent Inscription
+                </span>
+              </a>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {inscriptions.map((insc) => {
+              const image = (
+                <OrdinalImage
+                  src={`https://ordinals.com/content/${insc.inscription_id}`}
+                  alt={`Ordinal ${insc.inscription_id}`}
+                />
+              );
+              return (
+                <div
+                  key={insc.inscription_id}
+                  className="border-4 border-black aspect-square shadow-[5px_5px_0px_0px_rgba(0,0,0)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0)] transition-all duration-200 bg-white relative flex flex-col items-center group cursor-pointer"
+                >
+                  <a
+                    href={`https://ordiscan.com/inscription/${insc.inscription_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full h-full"
+                    tabIndex={0}
+                  >
+                    {image}
+                  </a>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </main>
     </div>
   );
-}
-
-// Helper function to generate random colors for the gradients
-function getRandomColor() {
-  const colors = [
-    "#3b82f6",
-    "#1e3a8a", // blues
-    "#10b981",
-    "#064e3b", // greens
-    "#f59e0b",
-    "#92400e", // oranges
-    "#ef4444",
-    "#7f1d1d", // reds
-    "#8b5cf6",
-    "#4c1d95", // purples
-    "#ec4899",
-    "#831843", // pinks
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
 }
