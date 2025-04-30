@@ -1,6 +1,6 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import * as secp256k1 from "@bitcoinerlab/secp256k1";
-import { DUST_LIMIT, ORACLE_TAPROOT_ADDRESS } from "../../constants";
+import { DUST_LIMIT, getOracleTaprootAddress } from "../../constants";
 import { mempoolClient, UTXO } from "../../external/mempool-client";
 import { calculateExpectedTxId } from "../core/inscription-utils";
 import { signParentP2TRInput } from "../oracle/oracle";
@@ -18,7 +18,8 @@ export type RevealPsbtResult = {
  * this finds the latest output of the parent inscription in the queue
  */
 async function getCurrentParentInscriptionUtxoDetails() {
-  const utxos: UTXO[] = await mempoolClient.getUTXOs(ORACLE_TAPROOT_ADDRESS);
+  const oracleAddress = getOracleTaprootAddress();
+  const utxos: UTXO[] = await mempoolClient.getUTXOs(oracleAddress);
 
   let parentUtxo: UTXO | null = null;
 
@@ -35,7 +36,7 @@ async function getCurrentParentInscriptionUtxoDetails() {
           input.prevout &&
           input.prevout.value === DUST_LIMIT &&
           input.prevout.scriptpubkey_type === "v1_p2tr" &&
-          input.prevout.scriptpubkey_address === ORACLE_TAPROOT_ADDRESS
+          input.prevout.scriptpubkey_address === oracleAddress
         ) {
           parentUtxo = utxo;
           return true;
@@ -54,7 +55,7 @@ async function getCurrentParentInscriptionUtxoDetails() {
 
   if (!parentUtxo) {
     throw new Error(
-      `Could not find a suitable parent UTXO originating from ${ORACLE_TAPROOT_ADDRESS}.`,
+      `Could not find a suitable parent UTXO originating from ${oracleAddress}.`,
     );
   }
 
@@ -132,8 +133,8 @@ export async function prepareRevealTx(
     tapLeafScript: [
       {
         leafVersion: 0xc0,
-        script: revealParams.inscriptionScript, // This script MUST include OP_3 if parentParams was used upstream
-        controlBlock: revealParams.controlBlock,
+        script: new Uint8Array(revealParams.inscriptionScript),
+        controlBlock: new Uint8Array(revealParams.controlBlock),
       },
     ],
   });
@@ -230,7 +231,7 @@ export async function prepareRevealTx(
   // Output 0: Send parent ordinal back to its owner -> send back to oracle
   // Note: The actual sat carrying the parent inscription will flow here.
   revealPsbt.addOutput({
-    address: ORACLE_TAPROOT_ADDRESS, // Send parent back to its owner
+    address: getOracleTaprootAddress(), // Send parent back to its owner
     value: BigInt(DUST_LIMIT), // Send dust value
   });
   totalOutputValue += DUST_LIMIT;

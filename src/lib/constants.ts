@@ -6,4 +6,6 @@ export const DEFAULT_POSTAGE = DUST_LIMIT;
 export const PARENT_INSCRIPTION_ID =
   process.env.NEXT_PUBLIC_PARENT_INSCRIPTION_ID!;
 
-export const ORACLE_TAPROOT_ADDRESS = process.env.ORACLE_TAPROOT_ADDRESS!;
+export function getOracleTaprootAddress() {
+  return process.env.ORACLE_TAPROOT_ADDRESS!;
+}
