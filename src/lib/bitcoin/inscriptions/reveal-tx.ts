@@ -113,15 +113,14 @@ export async function prepareRevealTx(
   revealPsbt.addInput({
     hash: parentTxId,
     index: parentVout,
-    // Assuming parent is a standard Taproot output, adjust if needed
     witnessUtxo: {
-      script: Buffer.from(parentScriptPubKeyHex, "hex"), // Now guaranteed to be a string
+      script: Buffer.from(parentScriptPubKeyHex, "hex"),
       value: BigInt(parentTx.vout[0].value),
     },
     tapInternalKey: xOnlyPubkey,
   });
 
-  // --- 2. Add Commit Input (Inscription data)
+  // Add Commit Input (Inscription data)
   const commitInputIndex = inputIndex;
   revealPsbt.addInput({
     hash: commitTxid,
@@ -154,10 +153,9 @@ export async function prepareRevealTx(
   }
 
   // Calculate required fee contribution AFTER adding inscription output value
-  // The fee calculation might need refinement depending on how revealFee is estimated
   const requiredFeeContribution = revealParams.revealFee;
 
-  // Filter out dust UTXOs and calculate total available value
+  // Filter out dust UTXOs
   const availablePaymentUtxos = paymentUtxos.filter(
     (utxo) => utxo.value > DUST_LIMIT,
   );
@@ -179,7 +177,7 @@ export async function prepareRevealTx(
     selectedUtxos.push(utxo);
     accumulatedPaymentValue += utxo.value;
     if (accumulatedPaymentValue >= requiredFeeContribution) {
-      break; // Stop adding UTXOs once enough value is accumulated
+      break;
     }
   }
 

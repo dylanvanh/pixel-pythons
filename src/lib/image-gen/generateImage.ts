@@ -20,14 +20,14 @@ const FIRST_SINGLE_TRAIT_LAYER_INDEX = TRAIT_LAYERS.findIndex(
   (layer) => layer.name === "eyes",
 );
 
+// This must sum 1.0
 const EXTRA_PROB_TABLE = [
-  { n: 0, p: 0.53 },
-  { n: 1, p: 0.35 },
-  { n: 2, p: 0.2 },
+  { n: 1, p: 0.5 },
+  { n: 2, p: 0.3 },
   { n: 3, p: 0.15 },
-  { n: 4, p: 0.008 },
-  { n: 5, p: 0.002 },
-  { n: 6, p: 0.0001 },
+  { n: 4, p: 0.04 },
+  { n: 5, p: 0.009 },
+  { n: 6, p: 0.001 },
 ];
 
 function pickNumExtras(rng: () => number): number {

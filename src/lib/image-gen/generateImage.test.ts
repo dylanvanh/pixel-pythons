@@ -75,4 +75,3 @@ describe("Image Generation Module", () => {
     });
   });
 });
-
