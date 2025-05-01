@@ -19,9 +19,8 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsPublicKey,
     paymentAddress,
     paymentPublicKey,
+    mintIndex,
   } = validatedBody.data;
-
-  const mintIndex = 10;
 
   const fastFeeRate = await mempoolClient.getFastestFee();
 

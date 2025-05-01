@@ -23,10 +23,12 @@ export const useMintStore = create<MintState>((set, get) => ({
   walletProvider: null,
   paymentAddress: "",
   ordinalsAddress: "",
+  mintIndex: undefined,
 
   // Actions
   setMintStep: (step: MintStep) => set({ mintStep: step }),
   setIsLoading: (loading: boolean) => set({ isLoading: loading }),
+  setMintIndex: (mintIndex: number) => set({ mintIndex }),
   setCommitTxid: (txid: string) =>
     set((state) => ({
       transactions: { ...state.transactions, commitTxid: txid },
@@ -101,6 +103,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       setCommitSigned,
       setCommitTxid,
       setCommitBroadcasted,
+      setMintIndex,
       paymentAddress,
       ordinalsAddress,
       walletProvider,
@@ -143,6 +146,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         taprootRevealValue: number;
         revealFee: number;
         postage: number;
+        mintIndex: number;
       }>("/api/prepare-commit", payload);
 
       console.log("commitResult", commitResult);
@@ -170,6 +174,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         setCommitTxid(result.txId);
         setCommitSigned(true);
         setCommitBroadcasted(true);
+        setMintIndex(commitResult.mintIndex);
         setMintStep("reveal");
       } else {
         throw new Error("No transaction ID returned from signing");
@@ -193,6 +198,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       ordinalsAddress,
       paymentAddress,
       walletProvider,
+      mintIndex,
     } = get();
 
     if (
@@ -221,6 +227,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         ordinalsPublicKey: walletProvider.publicKey,
         paymentAddress,
         paymentPublicKey: walletProvider.paymentPublicKey,
+        mintIndex: mintIndex as number,
       };
 
       const prepareResult = await internalApi.post<{

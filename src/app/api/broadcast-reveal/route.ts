@@ -1,5 +1,5 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config"; // Ensure this path is correct
-import { saveInscriptionRecord } from "@/lib/bitcoin/inscriptions/save-inscription";
+import { saveInscriptionRecord } from "@/lib/supabase/save-inscription";
 import { BroadcastFailedError } from "@/lib/error/error-types/broadcast-failed-error";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";

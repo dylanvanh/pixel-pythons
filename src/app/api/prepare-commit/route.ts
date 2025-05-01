@@ -3,6 +3,7 @@ import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareCommitRequestSchema } from "@/lib/zod-types/commit-types";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
+import { getAndIncrementMintIndex } from "@/lib/supabase/get-and-increment-mint-index";
 
 export const POST = withErrorHandling(async (request: Request) => {
   const body = await request.json();
@@ -19,7 +20,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     paymentPublicKey,
   } = validatedBody.data;
 
-  const mintIndex = 10;
+  const mintIndex = await getAndIncrementMintIndex(ordinalsAddress);
 
   const fastFeeRate = await mempoolClient.getFastestFee();
 
@@ -58,5 +59,6 @@ export const POST = withErrorHandling(async (request: Request) => {
     taprootRevealValue: commitResult.taprootRevealValue,
     revealFee: commitResult.revealFee,
     postage: commitResult.postage,
+    mintIndex,
   });
 });

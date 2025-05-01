@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase/config"; // Import the Supabase admin client
+import { supabase } from "@/lib/supabase/config";
 
 interface InscriptionRecordData {
   inscriptionId: string;
