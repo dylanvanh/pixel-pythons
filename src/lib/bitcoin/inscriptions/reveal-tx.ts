@@ -5,6 +5,7 @@ import { mempoolClient, UTXO } from "../../external/mempool-client";
 import { calculateExpectedTxId } from "../core/inscription-utils";
 import { signParentP2TRInput } from "../oracle/oracle";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
+import { env } from "@/env";
 
 export type RevealPsbtResult = {
   revealPsbt: string;
@@ -84,10 +85,7 @@ export async function prepareRevealTx(
   let totalInputValue = 0;
   let inputIndex = 1; // Parent index is 0 (oracle signed)
 
-  const compressedPubkey = Buffer.from(
-    process.env.ORACLE_COMPRESSED_PUBLIC_KEY!,
-    "hex",
-  );
+  const compressedPubkey = Buffer.from(env.ORACLE_COMPRESSED_PUBLIC_KEY, "hex");
 
   const xOnlyPubkey = secp256k1.xOnlyPointFromPoint(compressedPubkey);
 

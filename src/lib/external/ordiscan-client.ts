@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import ApiClient from "./api-client";
 
 export type Inscription = {
@@ -30,12 +31,12 @@ export class OrdiscanClient extends ApiClient {
   constructor() {
     super(OrdiscanClient.getBaseUrl());
 
-    const apiKey = process.env.ORDISCAN_API_KEY!;
+    const apiKey = env.ORDISCAN_API_KEY;
     this.api.defaults.headers.common["Authorization"] = `Bearer ${apiKey}`;
   }
 
   private static getBaseUrl(): string {
-    const baseUrl = process.env.ORDISCAN_URL;
+    const baseUrl = env.ORDISCAN_URL;
     if (!baseUrl) {
       throw new Error("ORDISCAN_URL environment variable is not set.");
     }

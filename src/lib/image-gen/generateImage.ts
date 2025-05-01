@@ -5,56 +5,68 @@ import path from "path";
 import seedrandom from "seedrandom";
 import crypto from "crypto";
 
+export const TRAIT_LAYER_NAME = {
+  BACKGROUND: "background",
+  BODY: "body",
+  EXTRA: "extra",
+  EYES: "eyes",
+  HAT: "hat",
+  TONGUE: "tongue",
+} as const;
+
 const TRAIT_LAYERS = [
-  { name: "background", dir: "public/sneks/background" },
-  { name: "body", dir: "public/sneks/body" },
-  { name: "extra", dir: "public/sneks/extra" },
-  { name: "eyes", dir: "public/sneks/eyes" },
-  { name: "hat", dir: "public/sneks/hat" },
-  { name: "tongue", dir: "public/sneks/tongue" },
+  { name: TRAIT_LAYER_NAME.BACKGROUND, dir: "public/sneks/background" },
+  { name: TRAIT_LAYER_NAME.BODY, dir: "public/sneks/body" },
+  { name: TRAIT_LAYER_NAME.EXTRA, dir: "public/sneks/extra" },
+  { name: TRAIT_LAYER_NAME.EYES, dir: "public/sneks/eyes" },
+  { name: TRAIT_LAYER_NAME.HAT, dir: "public/sneks/hat" },
+  { name: TRAIT_LAYER_NAME.TONGUE, dir: "public/sneks/tongue" },
 ];
 
 const IMAGE_SIZE = 24;
 
-const FIRST_SINGLE_TRAIT_LAYER_INDEX = TRAIT_LAYERS.findIndex(
-  (layer) => layer.name === "eyes",
-);
-
 // This must sum 1.0
 const EXTRA_PROB_TABLE = [
-  { n: 1, p: 0.5 },
-  { n: 2, p: 0.3 },
-  { n: 3, p: 0.15 },
-  { n: 4, p: 0.04 },
-  { n: 5, p: 0.009 },
-  { n: 6, p: 0.001 },
+  { numExtras: 1, probability: 0.5 },
+  { numExtras: 2, probability: 0.3 },
+  { numExtras: 3, probability: 0.15 },
+  { numExtras: 4, probability: 0.04 },
+  { numExtras: 5, probability: 0.009 },
+  { numExtras: 6, probability: 0.001 },
 ];
 
 function pickNumExtras(rng: () => number): number {
   const rand = rng();
   let cumulative = 0;
 
-  for (const { n, p } of EXTRA_PROB_TABLE) {
-    cumulative += p;
-    if (rand < cumulative) return n;
+  for (const { numExtras, probability } of EXTRA_PROB_TABLE) {
+    cumulative += probability;
+    if (rand < cumulative) return numExtras;
   }
 
   return 0;
 }
 
 function pickExtras(traitFiles: string[], rng: () => number): string[] {
-  const numExtras = pickNumExtras(rng);
-  if (numExtras === 0) return [];
+  const numExtrasToPick = pickNumExtras(rng);
+  if (numExtrasToPick === 0) return [];
 
-  const shuffled = [...traitFiles];
+  const shuffledTraitFiles = [...traitFiles];
 
-  // Fisher-Yates shuffle
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  // Fisher Yates Shuffle to ensure random, unbiased selection of extras
+  for (
+    let currentIndex = shuffledTraitFiles.length - 1;
+    currentIndex > 0;
+    currentIndex--
+  ) {
+    const randomIndex = Math.floor(rng() * (currentIndex + 1));
+    [shuffledTraitFiles[currentIndex], shuffledTraitFiles[randomIndex]] = [
+      shuffledTraitFiles[randomIndex],
+      shuffledTraitFiles[currentIndex],
+    ];
   }
 
-  return shuffled.slice(0, numExtras);
+  return shuffledTraitFiles.slice(0, numExtrasToPick);
 }
 
 async function getTraitFiles(dir: string): Promise<string[]> {
@@ -104,37 +116,10 @@ export async function generateImageBufferForMint(
   // Select trait indices for all layers
   const indices = selectTraitIndicesForLayers(address, mintIndex, traitOptions);
 
-  // Draw background layer
-  await drawImageOnCanvas(
-    ctx,
-    path.join(process.cwd(), TRAIT_LAYERS[0].dir, traitOptions[0][indices[0]]),
-  );
-
-  // Draw body layer
-  await drawImageOnCanvas(
-    ctx,
-    path.join(process.cwd(), TRAIT_LAYERS[1].dir, traitOptions[1][indices[1]]),
-  );
-
-  // Handle special case for extras (multiple traits possible)
-  const extraLayerIndex = 2;
-  const selectedExtras = pickExtras(traitOptions[extraLayerIndex], rng);
-
-  for (const extraFile of selectedExtras) {
-    await drawImageOnCanvas(
-      ctx,
-      path.join(process.cwd(), TRAIT_LAYERS[extraLayerIndex].dir, extraFile),
-    );
-  }
-
-  // Draw remaining single-trait layers (eyes, hat, tongue)
-  for (
-    let layerIndex = FIRST_SINGLE_TRAIT_LAYER_INDEX;
-    layerIndex < TRAIT_LAYERS.length;
-    layerIndex++
-  ) {
+  // Draw all single-trait layers
+  for (let layerIndex = 0; layerIndex < TRAIT_LAYERS.length; layerIndex++) {
+    if (TRAIT_LAYERS[layerIndex].name === TRAIT_LAYER_NAME.EXTRA) continue;
     const traitFile = traitOptions[layerIndex][indices[layerIndex]];
-
     if (traitFile && traitFile !== "N/A") {
       await drawImageOnCanvas(
         ctx,
@@ -143,5 +128,17 @@ export async function generateImageBufferForMint(
     }
   }
 
-  return canvas.toBuffer("image/png");
+  // Draw extras (multiple traits possible)
+  const extraLayerIndex = TRAIT_LAYERS.findIndex(
+    (layer) => layer.name === TRAIT_LAYER_NAME.EXTRA,
+  );
+  const selectedExtras = pickExtras(traitOptions[extraLayerIndex], rng);
+  for (const extraFile of selectedExtras) {
+    await drawImageOnCanvas(
+      ctx,
+      path.join(process.cwd(), TRAIT_LAYERS[extraLayerIndex].dir, extraFile),
+    );
+  }
+
+  return canvas.toBuffer("image/png"); 
 }

@@ -1,3 +1,4 @@
+import { env } from "@/env";
 import ApiClient from "./api-client";
 
 export type UTXO = {
@@ -44,7 +45,7 @@ export class MempoolClient extends ApiClient {
   }
 
   private static getBaseUrl(): string {
-    return `${process.env.MEMPOOL_URL}/api`;
+    return `${env.MEMPOOL_URL}/api`;
   }
 
   async getFastestFee(): Promise<number> {

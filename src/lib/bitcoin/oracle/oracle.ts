@@ -4,15 +4,13 @@ import { Psbt } from "bitcoinjs-lib";
 import * as bitcoin from "bitcoinjs-lib";
 import { ECPair } from "../core/bitcoin-config";
 import { createTweakedKeyPairForTaproot } from "./tweak";
+import { env } from "@/env";
 
 // TODO: remove later, do the same in config
 bitcoin.initEccLib(secp256k1);
 
 function getKeyPairFromPrivateWif(): ECPairInterface {
-  const privateKeyWif = process.env.ORACLE_PRIVATE_KEY_WIF!;
-  if (!privateKeyWif) {
-    throw new Error("PRIVATE_KEY_WIF environment variable is not set.");
-  }
+  const privateKeyWif = env.ORACLE_PRIVATE_KEY_WIF;
   return ECPair.fromWIF(privateKeyWif);
 }
 
