@@ -40,7 +40,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsPublicKey,
     mintIndex,
     {
-      feeRate: 1,
+      feeRate: fastFeeRate,
       paymentPublicKey,
     },
   );

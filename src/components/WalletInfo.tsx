@@ -11,7 +11,12 @@ export interface WalletInfoProps {
 }
 
 export function WalletInfo({ className }: WalletInfoProps) {
-  const { address: ordinalAddress, paymentAddress, provider, disconnect } = useLaserEyes();
+  const {
+    address: ordinalAddress,
+    paymentAddress,
+    provider,
+    disconnect,
+  } = useLaserEyes();
 
   if (!ordinalAddress || !paymentAddress) {
     return null;
@@ -24,24 +29,30 @@ export function WalletInfo({ className }: WalletInfoProps) {
           {provider && (
             <div className="flex items-center gap-1.5 bg-orange-200 border-2 border-black py-0.5 px-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0)]">
               <WalletIcon walletName={provider} size={14} />
-              <span className="font-bold text-[10px] uppercase">{provider}</span>
+              <span className="font-bold text-[10px] uppercase">
+                {provider}
+              </span>
             </div>
           )}
-          
+
           <div className="font-mono text-xs text-black/70 flex flex-row sm:flex-col gap-2 sm:gap-0 flex-wrap">
             <div className="flex items-center gap-1">
-              <span className="text-[9px] font-bold px-0.5 bg-black text-white">ORD</span>
+              <span className="text-[9px] font-bold px-0.5 bg-black text-white">
+                ORD
+              </span>
               <span>{truncateAddress(ordinalAddress, 5)}</span>
               <CopyToClipboard value={ordinalAddress} className="p-0.5 -mr-1" />
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-[9px] font-bold px-0.5 bg-black text-white">PAY</span>
+              <span className="text-[9px] font-bold px-0.5 bg-black text-white">
+                PAY
+              </span>
               <span>{truncateAddress(paymentAddress, 5)}</span>
               <CopyToClipboard value={paymentAddress} className="p-0.5 -mr-1" />
             </div>
           </div>
         </div>
-        
+
         <button
           onClick={() => disconnect()}
           className="border-2 border-black bg-white hover:bg-red-100 transition-colors py-0.5 px-1.5 flex items-center gap-1 text-xs font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0)] ml-auto sm:ml-0"
@@ -54,4 +65,5 @@ export function WalletInfo({ className }: WalletInfoProps) {
       </div>
     </div>
   );
-} 
+}
+

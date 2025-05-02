@@ -6,4 +6,7 @@ export const BroadcastRevealRequestSchema = z.object({
   ordinalsAddress: z.string().min(1),
 });
 
-export type BroadcastRevealRequest = z.infer<typeof BroadcastRevealRequestSchema>; 
+export type BroadcastRevealRequest = z.infer<
+  typeof BroadcastRevealRequestSchema
+>;
+

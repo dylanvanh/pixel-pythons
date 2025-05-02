@@ -7,4 +7,5 @@ export const PrepareCommitRequestSchema = z.object({
   paymentPublicKey: z.string().min(1),
 });
 
-export type PrepareCommitRequest = z.infer<typeof PrepareCommitRequestSchema>; 
+export type PrepareCommitRequest = z.infer<typeof PrepareCommitRequestSchema>;
+

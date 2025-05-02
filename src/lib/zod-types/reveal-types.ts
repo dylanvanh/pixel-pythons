@@ -10,4 +10,3 @@ export const PrepareRevealRequestSchema = z.object({
 });
 
 export type PrepareRevealRequest = z.infer<typeof PrepareRevealRequestSchema>;
-

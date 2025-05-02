@@ -30,4 +30,3 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_PARENT_INSCRIPTION_ID,
   },
 });
-

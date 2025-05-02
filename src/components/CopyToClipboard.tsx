@@ -39,4 +39,3 @@ export function CopyToClipboard({ value, className }: CopyToClipboardProps) {
     </button>
   );
 }
-

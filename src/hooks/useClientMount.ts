@@ -10,4 +10,3 @@ export function useClientMounted() {
 
   return mounted;
 }
-

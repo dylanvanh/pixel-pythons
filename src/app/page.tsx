@@ -2,6 +2,7 @@ import { MintForm } from "@/components/MintForm";
 import { RecentMints } from "@/components/RecentMints";
 import { WalletInfo } from "@/components/WalletInfo";
 
+// Revalidate the page every 5 seconds
 export const revalidate = 5;
 
 export default function Home() {

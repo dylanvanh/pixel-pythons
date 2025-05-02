@@ -29,9 +29,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsAddress,
     ordinalsPublicKey: ordinalsPublicKey.substring(0, 10) + "...",
     paymentAddress,
-    paymentPublicKey: paymentPublicKey
-      ? paymentPublicKey.substring(0, 10) + "..."
-      : "N/A",
+    paymentPublicKey: paymentPublicKey,
     mintIndex,
     feeRate: fastFeeRate,
   });
@@ -40,7 +38,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsAddress,
     mintIndex,
     ordinalsPublicKey,
-    1,
+    fastFeeRate,
   );
 
   // Construct revealParams using data from the shared function

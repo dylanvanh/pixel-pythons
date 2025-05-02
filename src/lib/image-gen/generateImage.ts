@@ -140,5 +140,5 @@ export async function generateImageBufferForMint(
     );
   }
 
-  return canvas.toBuffer("image/png"); 
+  return canvas.toBuffer("image/png");
 }

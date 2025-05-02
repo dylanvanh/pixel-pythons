@@ -8,8 +8,7 @@ export class InsufficientFundsError extends AppError {
     super(
       message,
       ErrorCode.INSUFFICIENT_FUNDS,
-      statusCode ?? InsufficientFundsError.defaultStatusCode
+      statusCode ?? InsufficientFundsError.defaultStatusCode,
     );
   }
 }
-

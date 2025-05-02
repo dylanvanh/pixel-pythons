@@ -109,9 +109,6 @@ export const useMintStore = create<MintState>((set, get) => ({
       walletProvider,
     } = get();
 
-    console.log("paymentAddress", paymentAddress);
-    console.log("ordinalsAddress", ordinalsAddress);
-
     if (!walletProvider || !paymentAddress || !ordinalsAddress) {
       console.error("Wallet provider not connected or addresses not available");
       return;
@@ -149,14 +146,10 @@ export const useMintStore = create<MintState>((set, get) => ({
         mintIndex: number;
       }>("/api/prepare-commit", payload);
 
-      console.log("commitResult", commitResult);
-
       const psbt = commitResult.commitPsbt;
-      console.log("Commit PSBT prepared:", psbt.slice(0, 40) + "...");
 
       const parsedPsbt = bitcoin.Psbt.fromBase64(psbt);
       const numberOfInputs = parsedPsbt.data.inputs.length;
-      console.log("Number of inputs to sign:", numberOfInputs);
 
       const result = await walletProvider.signPsbt({
         tx: psbt,
@@ -167,8 +160,6 @@ export const useMintStore = create<MintState>((set, get) => ({
         finalize: true,
         broadcast: true,
       });
-
-      console.log("result", result);
 
       if (result.txId) {
         setCommitTxid(result.txId);
@@ -255,14 +246,6 @@ export const useMintStore = create<MintState>((set, get) => ({
           `None of your available addresses (${availableAddresses.join(", ")}) match the required signing addresses in the input map.`,
         );
       }
-      console.log(
-        `Found ${inputsToSign.length} inputs to sign for reveal:`,
-        inputsToSign,
-      );
-
-      console.log(
-        "Requesting wallet signature for reveal PSBT (no broadcast)...",
-      );
       const signResult = await walletProvider.signPsbt({
         tx: revealPsbt,
         inputsToSign: inputsToSign,
@@ -277,10 +260,8 @@ export const useMintStore = create<MintState>((set, get) => ({
           "Wallet did not return signed PSBT data after signing.",
         );
       }
-      console.log("Signed reveal PSBT obtained from wallet.");
       setRevealSigned(true);
 
-      console.log("Sending signed PSBT to backend for broadcast...");
       const broadcastPayload: BroadcastRevealRequest = {
         signedPsbtBase64: signedPsbtBase64,
         commitTxid: transactions.commitTxid,
@@ -292,7 +273,6 @@ export const useMintStore = create<MintState>((set, get) => ({
         inscriptionId: string;
       }>("/api/broadcast-reveal", broadcastPayload);
 
-      console.log("Backend broadcast successful:", broadcastResponse);
       setRevealTxid(broadcastResponse.revealTxid);
       setRevealBroadcasted(true);
       setMintStep("success");

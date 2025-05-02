@@ -14,18 +14,18 @@ vi.mock("./generate-inscription-data", () => ({
   generateInscriptionData: vi.fn(),
 }));
 
-vi.mock('@/env', () => ({
+vi.mock("@/env", () => ({
   env: {
-    MEMPOOL_URL: 'mock',
-    ORDISCAN_URL: 'mock',
-    ORDISCAN_API_KEY: 'mock',
-    ORACLE_PRIVATE_KEY_WIF: 'mock',
-    ORACLE_COMPRESSED_PUBLIC_KEY: 'mock',
-    ORACLE_TAPROOT_ADDRESS: 'mock',
-    SUPABASE_URL: 'mock',
-    SUPABASE_SERVICE_ROLE_KEY: 'mock',
-    NEXT_PUBLIC_PARENT_INSCRIPTION_ID: 'mock',
-  }
+    MEMPOOL_URL: "mock",
+    ORDISCAN_URL: "mock",
+    ORDISCAN_API_KEY: "mock",
+    ORACLE_PRIVATE_KEY_WIF: "mock",
+    ORACLE_COMPRESSED_PUBLIC_KEY: "mock",
+    ORACLE_TAPROOT_ADDRESS: "mock",
+    SUPABASE_URL: "mock",
+    SUPABASE_SERVICE_ROLE_KEY: "mock",
+    NEXT_PUBLIC_PARENT_INSCRIPTION_ID: "mock",
+  },
 }));
 
 describe("prepareCommitTx (integration)", () => {

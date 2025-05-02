@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
-import { useLaserEyes } from '@omnisat/lasereyes'
+import { useLaserEyes } from "@omnisat/lasereyes";
 
 export function AddressDebug() {
-  const { address, paymentAddress, publicKey, paymentPublicKey } = useLaserEyes()
-  
+  const { address, paymentAddress, publicKey, paymentPublicKey } =
+    useLaserEyes();
+
   if (process.env.NODE_ENV === "production") return null;
 
   const logAddresses = () => {
-    console.log('LaserEyes Addresses:')
     console.log({
       ordinalsAddress: address,
       paymentAddress: paymentAddress,
       ordinalsPublicKey: publicKey,
-      paymentPublicKey: paymentPublicKey
-    })
-  }
+      paymentPublicKey: paymentPublicKey,
+    });
+  };
 
   return (
     <div className="fixed bottom-4 right-4">
@@ -26,5 +26,6 @@ export function AddressDebug() {
         Debug Addresses
       </button>
     </div>
-  )
-} 
+  );
+}
+

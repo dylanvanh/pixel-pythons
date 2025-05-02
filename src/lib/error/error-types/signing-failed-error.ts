@@ -8,8 +8,7 @@ export class SigningFailedError extends AppError {
     super(
       message,
       ErrorCode.SIGNING_FAILED,
-      statusCode ?? SigningFailedError.defaultStatusCode
+      statusCode ?? SigningFailedError.defaultStatusCode,
     );
   }
 }
-
