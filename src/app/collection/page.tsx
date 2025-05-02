@@ -3,6 +3,9 @@ import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions
 import { OrdinalImage } from "@/components/OrdinalImage";
 import { PARENT_INSCRIPTION_ID } from "@/lib/constants";
 
+// Revalidate the page every 5 seconds
+export const revalidate = 5;
+
 export default async function CollectionPage() {
   const inscriptions = await fetchInscriptions();
 
