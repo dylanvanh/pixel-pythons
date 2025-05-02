@@ -4,7 +4,7 @@ CREATE TABLE inscriptions (
   created_at TIMESTAMP DEFAULT now(),
   commit_txid TEXT,
   reveal_txid TEXT,
-  ordinals_addr TEXT
+  ordinals_address TEXT
 );
 
 CREATE TABLE mint_state (
