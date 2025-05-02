@@ -13,6 +13,8 @@ export async function saveInscriptionRecord(
   const { inscriptionId, revealTxid, commitTxid, ordinalsAddress } = recordData;
   const tableName = "inscriptions";
 
+  console.log("recordData", recordData);
+
   try {
     const { data, error } = await supabase.from(tableName).insert({
       inscription_id: inscriptionId,
