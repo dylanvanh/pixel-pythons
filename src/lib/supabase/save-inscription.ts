@@ -16,7 +16,7 @@ export async function saveInscriptionRecord(
   console.log("recordData", recordData);
 
   try {
-    const { data, error } = await supabase.from(tableName).insert({
+    const { error } = await supabase.from(tableName).insert({
       inscription_id: inscriptionId,
       reveal_txid: revealTxid,
       commit_txid: commitTxid,
@@ -28,7 +28,6 @@ export async function saveInscriptionRecord(
     }
 
     console.log("error", error);
-    console.log("data", data);
   } catch (error: unknown) {
     console.error(
       `Unexpected error saving inscription ${inscriptionId} to database:`,

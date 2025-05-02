@@ -10,6 +10,8 @@ export const POST = withErrorHandling(async (request: Request) => {
   const body = await request.json();
   const parsedRequest = BroadcastRevealRequestSchema.safeParse(body);
 
+  console.log("parsedRequest", parsedRequest);
+
   if (!parsedRequest.success) {
     throw new InvalidParametersError(
       `Invalid data for broadcasting reveal: ${JSON.stringify(parsedRequest.error.flatten())}`,
@@ -38,7 +40,7 @@ export const POST = withErrorHandling(async (request: Request) => {
 
   // Fail gracefully
   try {
-    saveInscriptionRecord({
+    await saveInscriptionRecord({
       inscriptionId,
       revealTxid,
       commitTxid,
