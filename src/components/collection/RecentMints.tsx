@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions";
-import { OrdinalImage } from "@/components/OrdinalImage";
+import { OrdinalImage } from "@/components/collection/OrdinalImage";
 
 export async function RecentMints() {
   const recentMints = await fetchInscriptions(5);

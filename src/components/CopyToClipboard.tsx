@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Copy, Check } from "lucide-react";
-
 interface CopyToClipboardProps {
   value: string;
   className?: string;

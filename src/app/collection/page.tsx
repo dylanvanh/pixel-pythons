@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions";
-import { OrdinalImage } from "@/components/OrdinalImage";
+import { OrdinalImage } from "@/components/collection/OrdinalImage";
 import { PARENT_INSCRIPTION_ID } from "@/lib/constants";
 import axios from "axios";
+import { ParentInscription } from "@/components/collection/ParentInscription";
 
 // Revalidate the page every 5 seconds
 export const revalidate = 5;
@@ -31,7 +32,7 @@ export default async function CollectionPage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-1 flex flex-col items-center py-12 px-4 bg-gradient-to-b from-white to-gray-100">
+      <main className="flex-1 flex flex-col items-center py-12 px-4">
         <div className="max-w-6xl w-full mx-auto">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Collection Gallery</h2>
@@ -45,23 +46,11 @@ export default async function CollectionPage() {
 
           {PARENT_INSCRIPTION_ID && (
             <div className="mb-8 flex flex-col items-center">
-              <a
-                href={`https://ordiscan.com/inscription/${PARENT_INSCRIPTION_ID}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="border-4 border-yellow-500 aspect-square w-48 h-48 shadow-lg bg-white flex flex-col items-center justify-center relative cursor-pointer"
-              >
-                <div className="w-full h-full flex items-center justify-center bg-white relative">
-                  <span className="text-lg font-semibold text-center break-words px-2">
-                    {parentTextError
-                      ? "Error loading parent inscription"
-                      : (parentText ?? "Loading...")}
-                  </span>
-                </div>
-                <span className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded shadow">
-                  Parent Inscription
-                </span>
-              </a>
+              <ParentInscription
+                inscriptionId={PARENT_INSCRIPTION_ID}
+                text={parentText}
+                hasError={parentTextError}
+              />
             </div>
           )}
 
