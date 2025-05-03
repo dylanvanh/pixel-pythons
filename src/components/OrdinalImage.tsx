@@ -27,7 +27,7 @@ export function OrdinalImage({
           unoptimized
           style={{ imageRendering: "pixelated" }}
           onError={() => setError(true)}
-          onLoadingComplete={() => setLoading(false)}
+          onLoad={() => setLoading(false)}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full bg-white">

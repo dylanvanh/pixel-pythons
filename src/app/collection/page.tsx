@@ -2,12 +2,32 @@ import Link from "next/link";
 import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions";
 import { OrdinalImage } from "@/components/OrdinalImage";
 import { PARENT_INSCRIPTION_ID } from "@/lib/constants";
+import axios from "axios";
 
 // Revalidate the page every 5 seconds
 export const revalidate = 5;
 
+async function fetchParentInscriptionText(
+  inscriptionId: string,
+): Promise<string> {
+  if (!inscriptionId) throw new Error("No inscription ID provided");
+  const url = `https://ordiscan.com/content/${inscriptionId}`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
 export default async function CollectionPage() {
   const inscriptions = await fetchInscriptions();
+
+  let parentText: string | null = null;
+  let parentTextError = false;
+  if (PARENT_INSCRIPTION_ID) {
+    try {
+      parentText = await fetchParentInscriptionText(PARENT_INSCRIPTION_ID);
+    } catch {
+      parentTextError = true;
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,10 +51,13 @@ export default async function CollectionPage() {
                 rel="noopener noreferrer"
                 className="border-4 border-yellow-500 aspect-square w-48 h-48 shadow-lg bg-white flex flex-col items-center justify-center relative cursor-pointer"
               >
-                <OrdinalImage
-                  src={`https://ordinals.com/content/${PARENT_INSCRIPTION_ID}`}
-                  alt="Parent Inscription"
-                />
+                <div className="w-full h-full flex items-center justify-center bg-white relative">
+                  <span className="text-lg font-semibold text-center break-words px-2">
+                    {parentTextError
+                      ? "Error loading parent inscription"
+                      : (parentText ?? "Loading...")}
+                  </span>
+                </div>
                 <span className="absolute top-2 left-2 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded shadow">
                   Parent Inscription
                 </span>
@@ -43,7 +66,7 @@ export default async function CollectionPage() {
           )}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {inscriptions.map((insc) => {
+            {inscriptions.map((insc, idx) => {
               const image = (
                 <OrdinalImage
                   src={`https://ordinals.com/content/${insc.inscription_id}`}
@@ -64,6 +87,9 @@ export default async function CollectionPage() {
                   >
                     {image}
                   </a>
+                  <span className="absolute top-2 right-2 bg-black text-white text-xs font-bold px-2 py-1 rounded shadow">
+                    #{inscriptions.length - idx}
+                  </span>
                 </div>
               );
             })}
