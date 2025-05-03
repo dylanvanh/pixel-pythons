@@ -1,10 +1,11 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
-import { mempoolClient } from "../../external/mempool-client";
-import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../constants";
-import { UserWalletInfo, estimateCommitFee } from "../core/inscription-utils";
-import { generateInscriptionData } from "./generate-inscription-data";
+import { mempoolClient } from "../../../external/mempool-client";
+import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../../constants";
+import { estimateCommitFee } from "../../inscriptions/inscription-utils";
+import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
+import { UserWalletInfo } from "../../inscriptions/types";
 
 export type CommitPsbtResult = {
   commitPsbt: string;

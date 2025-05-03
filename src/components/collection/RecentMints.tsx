@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { fetchInscriptions } from "@/lib/bitcoin/inscriptions/fetch-inscriptions";
+import { fetchInscriptions } from "@/lib/supabase/fetch-inscriptions";
 import { OrdinalImage } from "@/components/collection/OrdinalImage";
 
 export async function RecentMints() {

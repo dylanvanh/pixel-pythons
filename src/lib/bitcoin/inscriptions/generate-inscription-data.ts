@@ -3,7 +3,7 @@ import * as secp256k1 from "@bitcoinerlab/secp256k1";
 import {
   createInscriptionScript,
   estimateRevealFee,
-} from "../core/inscription-utils";
+} from "./inscription-utils";
 import { generateImageBufferForMint } from "@/lib/image-gen/generate-image";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "@/lib/constants";
 

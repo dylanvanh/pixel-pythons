@@ -1,9 +1,9 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import * as secp256k1 from "@bitcoinerlab/secp256k1";
-import { DUST_LIMIT, getOracleTaprootAddress } from "../../constants";
-import { mempoolClient, UTXO } from "../../external/mempool-client";
-import { calculateExpectedTxId } from "../core/inscription-utils";
-import { signParentP2TRInput } from "../oracle/oracle";
+import { DUST_LIMIT, getOracleTaprootAddress } from "../../../constants";
+import { mempoolClient, UTXO } from "../../../external/mempool-client";
+import { calculateExpectedTxId } from "../../inscriptions/inscription-utils";
+import { signParentP2TRInput } from "../../oracle/oracle";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 import { env } from "@/env";
 
@@ -221,7 +221,6 @@ export async function prepareRevealTx(
     inputIndex++;
   }
 
-  // --- 4. Add Outputs ---
   let totalOutputValue = 0;
 
   // Output 0: Send parent ordinal back to its owner -> send back to oracle
@@ -239,15 +238,9 @@ export async function prepareRevealTx(
   });
   totalOutputValue += revealParams.postage;
 
-  // Output 2: Change (optional)
-  // Calculate fee based on known inputs and the two fixed outputs
   const changeAmount =
     totalInputValue - totalOutputValue - revealParams.revealFee;
 
-  console.log("Calculated changeAmount:", changeAmount);
-  console.log("Using estimated revealFee:", revealParams.revealFee);
-
-  // Check if change is needed and exceeds dust
   if (changeAmount > DUST_LIMIT) {
     revealPsbt.addOutput({
       address: userPaymentAddress, // Send change back to payment address
@@ -256,10 +249,8 @@ export async function prepareRevealTx(
     totalOutputValue += changeAmount;
   }
 
-  // Final actual fee calculation
   const finalActualFee = totalInputValue - totalOutputValue;
 
-  // --- 5. Finalize and Return ---
   const expectedTxid = calculateExpectedTxId(revealPsbt);
 
   // ORACLE
@@ -267,7 +258,7 @@ export async function prepareRevealTx(
 
   return {
     revealPsbt: revealPsbt.toBase64(),
-    revealFee: finalActualFee, // Return the calculated fee
+    revealFee: finalActualFee,
     // The new inscription is always the first output (index 0)
     expectedInscriptionId: `${expectedTxid}i0`,
     inputSigningMap,

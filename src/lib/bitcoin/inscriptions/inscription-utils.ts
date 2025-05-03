@@ -99,7 +99,6 @@ export function estimateRevealFee(
 /**
  * Calculate expected txid from PSBT
  * NOTE: THIS WILL ONLY WORK FOR ADDRESSES THAT USE *WITNESS*
- * Should probs be better to wait for broadcast of commmitTx , then pass back commitTxId to create the reveal
  */
 export function calculateExpectedTxId(psbt: bitcoin.Psbt): string {
   try {
@@ -164,32 +163,3 @@ export function hexToBytes(hex: string): Uint8Array {
   }
   return bytes;
 }
-
-/**
- * Shared type definitions
- */
-export type UTXO = {
-  txid: string;
-  vout: number;
-  status: {
-    confirmed: boolean;
-    block_height: number;
-    block_hash: string;
-    block_time: number;
-  };
-  value: number;
-};
-
-export type UserWalletInfo = {
-  paymentAddress: string;
-  ordinalsAddress: string;
-  ordinalsPublicKey: string;
-  paymentPublicKey?: string;
-  utxos: UTXO[];
-};
-
-export type TextInscriptionData = {
-  content: string;
-  contentType?: string;
-  postage?: number;
-};

@@ -31,9 +31,6 @@ export function signParentP2TRInput(psbt: Psbt): Psbt {
     throw new Error("PSBT does not have an input at index 0.");
   }
 
-  console.log("keyPairpub", tweakedKeyPair.publicKey);
-  console.log("keyPaircompressed", tweakedKeyPair.compressed);
-
   // Sign input 0
   // bitcoinjs-lib handles the correct sighash type for P2TR if the
   // witnessUtxo and tapInternalKey fields are correctly populated in the PSBT input.

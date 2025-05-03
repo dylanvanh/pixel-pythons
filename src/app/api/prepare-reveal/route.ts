@@ -1,5 +1,5 @@
 import { generateInscriptionData } from "@/lib/bitcoin/inscriptions/generate-inscription-data";
-import { prepareRevealTx } from "@/lib/bitcoin/inscriptions/reveal-tx";
+import { prepareRevealTx } from "@/lib/bitcoin/transaction/reveal/reveal-tx";
 import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareRevealRequestSchema } from "@/lib/zod-types/reveal-types";

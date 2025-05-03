@@ -1,4 +1,4 @@
-import { prepareCommitTx } from "@/lib/bitcoin/inscriptions/commit-tx";
+import { prepareCommitTx } from "@/lib/bitcoin/transaction/commit/commit-tx";
 import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareCommitRequestSchema } from "@/lib/zod-types/commit-types";

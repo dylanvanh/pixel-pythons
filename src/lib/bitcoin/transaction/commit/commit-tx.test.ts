@@ -2,17 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prepareCommitTx } from "./commit-tx";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
-import { mempoolClient } from "../../external/mempool-client";
-import { generateInscriptionData } from "./generate-inscription-data";
+import { mempoolClient } from "../../../external/mempool-client";
+import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
 
-vi.mock("../../external/mempool-client", () => ({
-  mempoolClient: {
-    getUTXOs: vi.fn(),
-  },
-}));
-vi.mock("./generate-inscription-data", () => ({
-  generateInscriptionData: vi.fn(),
-}));
+// Mock the modules
+vi.mock("../../../external/mempool-client");
+vi.mock("../../inscriptions/generate-inscription-data");
 
 vi.mock("@/env", () => ({
   env: {
@@ -66,7 +61,8 @@ describe("prepareCommitTx (integration)", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(mempoolClient.getUTXOs).mockResolvedValue(mockUtxos);
+    // Set up mocks using vi.mocked
+    mempoolClient.getUTXOs = vi.fn().mockResolvedValue(mockUtxos);
     vi.mocked(generateInscriptionData).mockResolvedValue(mockInscriptionData);
     process.env.ORACLE_COMPRESSED_PUBLIC_KEY = "02" + "b".repeat(64);
   });
@@ -96,7 +92,8 @@ describe("prepareCommitTx (integration)", () => {
   });
 
   it("throws InsufficientFundsError if not enough sats", async () => {
-    vi.mocked(mempoolClient.getUTXOs).mockResolvedValue([
+    // Override the mock for this test
+    mempoolClient.getUTXOs = vi.fn().mockResolvedValue([
       {
         txid: "a".repeat(64),
         vout: 0,
@@ -109,6 +106,7 @@ describe("prepareCommitTx (integration)", () => {
         },
       },
     ]);
+    
     await expect(
       prepareCommitTx(
         "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
