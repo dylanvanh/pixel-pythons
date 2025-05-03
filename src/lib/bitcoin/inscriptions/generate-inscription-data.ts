@@ -4,7 +4,7 @@ import {
   createInscriptionScript,
   estimateRevealFee,
 } from "../core/inscription-utils";
-import { generateImageBufferForMint } from "@/lib/image-gen/generateImage";
+import { generateImageBufferForMint } from "@/lib/image-gen/generate-image";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "@/lib/constants";
 
 export type InscriptionDataParams = {

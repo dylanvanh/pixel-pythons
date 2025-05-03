@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { useMintStore } from "@/store/mintStore";
+import { useMintStore } from "@/store/mint-store";
 import {
   useLaserEyes,
   UNISAT,
@@ -31,7 +31,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 
 export function MintForm() {

@@ -3,7 +3,7 @@ import {
   generateImageBufferForMint,
   selectTraitIndicesForLayers,
   TraitLayers,
-} from "./generateImage";
+} from "./generate-image";
 
 vi.mock("@napi-rs/canvas", () => ({
   createCanvas: vi.fn().mockReturnValue({
