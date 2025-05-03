@@ -15,6 +15,7 @@ export const env = createEnv({
   },
   client: {
     NEXT_PUBLIC_PARENT_INSCRIPTION_ID: z.string().min(1),
+    NEXT_PUBLIC_BASE_URL: z.string().min(1),
   },
   runtimeEnv: {
     MEMPOOL_URL: process.env.MEMPOOL_URL,
@@ -28,5 +29,6 @@ export const env = createEnv({
     VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
     NEXT_PUBLIC_PARENT_INSCRIPTION_ID:
       process.env.NEXT_PUBLIC_PARENT_INSCRIPTION_ID,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
 });
