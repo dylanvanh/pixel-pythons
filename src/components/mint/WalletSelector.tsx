@@ -87,38 +87,33 @@ function WalletSelectorContent({
   handleConnectWallet,
   formatWalletName,
 }: WalletSelectorContentProps) {
+  const sortedWallets = Object.values(SUPPORTED_WALLETS)
+    .filter((wallet) => wallet.name === XVERSE || wallet.name === LEATHER)
+    .sort((a, b) => {
+      // Ensure XVERSE is always first
+      if (a.name === XVERSE) return -1;
+      if (b.name === XVERSE) return 1;
+
+      // For other wallets, maintain installation-based sort
+      const aInstalled = walletStatusMap[a.name as keyof typeof walletStatusMap];
+      const bInstalled = walletStatusMap[b.name as keyof typeof walletStatusMap];
+
+      if (aInstalled && !bInstalled) return -1;
+      if (!aInstalled && bInstalled) return 1;
+
+      return 0;
+    });
+
   return (
     <>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {Object.values(SUPPORTED_WALLETS)
-          .filter((wallet) => wallet.name === XVERSE || wallet.name === LEATHER)
-          .sort((a, b) => {
-            // Ensure XVERSE is always first
-            if (a.name === XVERSE) return -1;
-            if (b.name === XVERSE) return 1;
-
-            // For other wallets, maintain installation-based sort
-            const aInstalled =
-              walletStatusMap[a.name as keyof typeof walletStatusMap];
-            const bInstalled =
-              walletStatusMap[b.name as keyof typeof walletStatusMap];
-
-            if (aInstalled && !bInstalled) return -1;
-            if (!aInstalled && bInstalled) return 1;
-
-            return 0;
-          })
-          .map((wallet) => {
-            const isInstalled =
-              walletStatusMap[wallet.name as keyof typeof walletStatusMap];
-            return (
+        {sortedWallets.map((wallet) => {
+          const isInstalled = walletStatusMap[wallet.name as keyof typeof walletStatusMap];
+          
+          return (
+            <div key={wallet.name} className="relative">
               <button
-                key={wallet.name}
-                onClick={
-                  isInstalled
-                    ? () => handleConnectWallet(wallet.name)
-                    : undefined
-                }
+                onClick={isInstalled ? () => handleConnectWallet(wallet.name) : undefined}
                 className={cn(
                   "w-full bg-white py-3 px-4 flex items-center justify-between",
                   "border-4 border-black rounded-lg",
@@ -134,7 +129,11 @@ function WalletSelectorContent({
                     {formatWalletName(wallet.name)}
                   </span>
                 </div>
-                {!isInstalled && (
+                {!isInstalled && <div className="w-[70px]"></div>}
+              </button>
+              
+              {!isInstalled && (
+                <div className="absolute top-0 right-0 h-full flex items-center pr-4">
                   <a
                     href={wallet.url}
                     target="_blank"
@@ -144,10 +143,11 @@ function WalletSelectorContent({
                   >
                     Install
                   </a>
-                )}
-              </button>
-            );
-          })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="w-full bg-blue-400 p-4 border-t-4 border-black text-center font-bold">
