@@ -11,7 +11,6 @@ export const env = createEnv({
     ORACLE_TAPROOT_ADDRESS: z.string().min(1),
     SUPABASE_URL: z.string().url(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-    VERCEL_GIT_COMMIT_SHA: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_PARENT_INSCRIPTION_ID: z.string().min(1),
@@ -26,7 +25,6 @@ export const env = createEnv({
     ORACLE_TAPROOT_ADDRESS: process.env.ORACLE_TAPROOT_ADDRESS,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
-    VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
     NEXT_PUBLIC_PARENT_INSCRIPTION_ID:
       process.env.NEXT_PUBLIC_PARENT_INSCRIPTION_ID,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
