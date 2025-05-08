@@ -4,8 +4,8 @@ import {
   createInscriptionScript,
   estimateRevealFee,
 } from "./inscription-utils";
-import { generateImageBufferForMint } from "@/lib/image-gen/generate-image";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "@/lib/constants";
+import { generateCompositeImageBuffer } from "@/lib/image-gen/generate-image";
 
 export type InscriptionDataParams = {
   contentType: Buffer;
@@ -30,10 +30,11 @@ export async function generateInscriptionData(
   const feeRate = feeRateInput || DEFAULT_FEE_RATE;
   const postage = DUST_LIMIT;
 
-  const imageBuffer = await generateImageBufferForMint(
+  const imageBuffer = await generateCompositeImageBuffer(
     ordinalsAddress,
     mintIndex,
   );
+
   const contentType = Buffer.from("image/png");
   const content = imageBuffer;
 
