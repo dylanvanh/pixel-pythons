@@ -70,9 +70,18 @@ export class MempoolClient extends ApiClient {
   }
 
   async getUTXOs(address: string): Promise<UTXO[]> {
-    return this.api
-      .get(`/address/${address}/utxo?_=${Date.now()}`)
-      .then((response) => response.data);
+    // This loop and delay are a workaround for potential stale data from the Mempool API.
+    // Occasionally, the API might return UTXOs that have already been spent.
+    // Retrying the request multiple times with a small delay increases the likelihood of getting the latest data.
+    let lastResponseData: UTXO[] = [];
+    for (let i = 0; i < 5; i++) {
+      const response = await this.api.get(
+        `/address/${address}/utxo?_=${Date.now()}`,
+      );
+      lastResponseData = response.data;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return lastResponseData;
   }
 
   async broadcastTransaction(rawTx: string): Promise<string> {
