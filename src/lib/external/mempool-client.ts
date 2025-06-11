@@ -20,23 +20,46 @@ export type RecommendedFees = {
   minimumFee: number;
 };
 type TransactionPrevout = {
+  scriptpubkey: string;
+  scriptpubkey_asm: string;
   scriptpubkey_type: string;
-  value: number;
   scriptpubkey_address: string;
+  value: number;
 };
 type TransactionVin = {
+  txid: string;
+  vout: number;
   prevout: TransactionPrevout;
+  scriptsig: string;
+  scriptsig_asm: string;
   witness?: string[];
+  is_coinbase: boolean;
+  sequence: number;
+  inner_redeemscript_asm?: string;
 };
 type TransactionVout = {
+  scriptpubkey: string;
+  scriptpubkey_asm: string;
   scriptpubkey_type: string;
-  scriptpubkey?: string;
   scriptpubkey_address?: string;
   value: number;
 };
-type Transaction = {
+export type Transaction = {
+  txid: string;
+  version: number;
+  locktime: number;
   vin: TransactionVin[];
   vout: TransactionVout[];
+  size: number;
+  weight: number;
+  sigops: number;
+  fee: number;
+  status: {
+    confirmed: boolean;
+    block_height: number;
+    block_hash: string;
+    block_time: number;
+  };
 };
 
 export class MempoolClient extends ApiClient {

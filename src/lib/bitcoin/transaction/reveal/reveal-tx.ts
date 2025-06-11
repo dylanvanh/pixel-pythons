@@ -5,6 +5,7 @@ import { mempoolClient, UTXO } from "../../../external/mempool-client";
 import { calculateExpectedTxId } from "../../inscriptions/inscription-utils";
 import { signParentP2TRInput } from "../../oracle/oracle";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
+import { getAvailablePaymentUtxos } from "../../utxo/utxo-fetcher";
 import { env } from "@/env";
 
 export type RevealPsbtResult = {
@@ -65,6 +66,8 @@ async function getCurrentParentInscriptionUtxoDetails() {
 
   return { parentTxId, parentVout };
 }
+
+
 
 export async function prepareRevealTx(
   commitTxid: string,
@@ -144,11 +147,7 @@ export async function prepareRevealTx(
 
   inputIndex++;
 
-  const paymentUtxos = await mempoolClient.getUTXOs(userPaymentAddress);
-
-  if (paymentUtxos.length === 0) {
-    throw new Error("No UTXOs found in payment wallet to cover fees");
-  }
+  const paymentUtxos = await getAvailablePaymentUtxos(commitTxid, userPaymentAddress);
 
   // Calculate required fee contribution AFTER adding inscription output value
   const requiredFeeContribution = revealParams.revealFee;

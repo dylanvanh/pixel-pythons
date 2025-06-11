@@ -14,6 +14,18 @@ export type Inscription = {
   contentUrl: string;
 };
 
+export type Rune = {
+  name: string;
+  balance: string;
+};
+
+export type UTXO = {
+  outpoint: string;
+  value: number;
+  runes: Rune[];
+  inscriptions: string[];
+};
+
 type InscriptionApiPayload = {
   inscription_id: string;
   inscription_number: number;
@@ -25,6 +37,13 @@ type InscriptionApiPayload = {
   timestamp: string;
   metadata: string | Record<string, string | number> | null;
   content_url: string;
+};
+
+type UTXOApiPayload = {
+  outpoint: string;
+  value: number;
+  runes: Rune[];
+  inscriptions: string[];
 };
 
 export class OrdiscanClient extends ApiClient {
@@ -70,6 +89,27 @@ export class OrdiscanClient extends ApiClient {
       contentUrl: response.content_url,
       metadata: response.metadata,
     };
+  }
+
+  async getAddressUTXOs(bitcoinAddress: string): Promise<UTXO[]> {
+    const response = await this.api
+      .get<{ data: UTXOApiPayload[] }>(`/v1/address/${bitcoinAddress}/utxos`)
+      .then((axiosResponse) => {
+        const innerData = axiosResponse?.data?.data;
+        if (!innerData) {
+          throw new Error(
+            "Invalid nested API response structure received from Ordiscan.",
+          );
+        }
+        return innerData;
+      });
+
+    return response.map((utxo) => ({
+      outpoint: utxo.outpoint,
+      value: utxo.value,
+      runes: utxo.runes,
+      inscriptions: utxo.inscriptions,
+    }));
   }
 }
 

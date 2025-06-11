@@ -1,11 +1,11 @@
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
-import { mempoolClient } from "../../../external/mempool-client";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../../constants";
 import { estimateCommitFee } from "../../inscriptions/inscription-utils";
 import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
 import { UserWalletInfo } from "../../inscriptions/types";
+import { getCleanPaymentUtxos } from "../../utxo/utxo-fetcher";
 
 export type CommitPsbtResult = {
   commitPsbt: string;
@@ -18,6 +18,8 @@ export type CommitPsbtResult = {
   inscriptionScript: Uint8Array;
 };
 
+
+
 export async function prepareCommitTx(
   userPaymentAddress: string,
   userOrdinalsAddress: string,
@@ -28,7 +30,7 @@ export async function prepareCommitTx(
     paymentPublicKey?: string;
   },
 ): Promise<CommitPsbtResult> {
-  const userUtxos = await mempoolClient.getUTXOs(userPaymentAddress);
+  const userUtxos = await getCleanPaymentUtxos(userPaymentAddress);
 
   const userWallet: UserWalletInfo = {
     paymentAddress: userPaymentAddress,
