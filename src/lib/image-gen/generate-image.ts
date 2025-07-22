@@ -1,4 +1,4 @@
-import { createCanvas, SKRSContext2D } from "@napi-rs/canvas";
+import { createCanvas, CanvasRenderingContext2D } from "canvas";
 import path from "path";
 
 import { IMAGE_SIZE, TRAIT_LAYERS } from "./config";
@@ -13,7 +13,7 @@ export async function generateCompositeImageBuffer(
   sessionId: string,
 ): Promise<Buffer> {
   const canvas = createCanvas(IMAGE_SIZE, IMAGE_SIZE);
-  const ctx = canvas.getContext("2d") as SKRSContext2D;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
   const allTraitFileOptions = await Promise.all(
     TRAIT_LAYERS.map((layer) =>

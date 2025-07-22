@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { generateCompositeImageBuffer } from "./generate-image";
 import { deterministicallySelectBaseTraitIndicesAndCreateHash } from "./utils";
 import type { TraitFileOptions } from "./types";
-import * as canvasMock from "@napi-rs/canvas";
+import * as canvasMock from "canvas";
 
-vi.mock("@napi-rs/canvas", () => ({
+vi.mock("canvas", () => ({
   createCanvas: vi.fn().mockReturnValue({
     getContext: vi.fn().mockReturnValue({
       drawImage: vi.fn(),

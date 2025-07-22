@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { SKRSContext2D, Image, loadImage } from "@napi-rs/canvas";
+import { CanvasRenderingContext2D, Image, loadImage } from "canvas";
 
 import type { TraitFileOptions, TraitSelectionResults } from "./types";
 import { IMAGE_SIZE } from "./config";
@@ -32,7 +32,7 @@ export function deterministicallySelectBaseTraitIndicesAndCreateHash(
 }
 
 export async function drawTraitImageFileOntoCanvasContext(
-  ctx: SKRSContext2D,
+  ctx: CanvasRenderingContext2D,
   filePath: string,
 ): Promise<void> {
   const img: Image = await loadImage(filePath);
