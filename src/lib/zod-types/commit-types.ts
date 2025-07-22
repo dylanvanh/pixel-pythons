@@ -8,4 +8,3 @@ export const PrepareCommitRequestSchema = z.object({
 });
 
 export type PrepareCommitRequest = z.infer<typeof PrepareCommitRequestSchema>;
-

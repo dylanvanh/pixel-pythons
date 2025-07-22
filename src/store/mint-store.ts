@@ -23,12 +23,12 @@ export const useMintStore = create<MintState>((set, get) => ({
   walletProvider: null,
   paymentAddress: "",
   ordinalsAddress: "",
-  mintIndex: undefined,
+  sessionId: undefined,
 
   // Actions
   setMintStep: (step: MintStep) => set({ mintStep: step }),
   setIsLoading: (loading: boolean) => set({ isLoading: loading }),
-  setMintIndex: (mintIndex: number) => set({ mintIndex }),
+  setSessionId: (sessionId: string) => set({ sessionId }),
   setCommitTxid: (txid: string) =>
     set((state) => ({
       transactions: { ...state.transactions, commitTxid: txid },
@@ -103,7 +103,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       setCommitSigned,
       setCommitTxid,
       setCommitBroadcasted,
-      setMintIndex,
+      setSessionId,
       paymentAddress,
       ordinalsAddress,
       walletProvider,
@@ -143,7 +143,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         taprootRevealValue: number;
         revealFee: number;
         postage: number;
-        mintIndex: number;
+        sessionId: string;
       }>("/api/prepare-commit", payload);
 
       const psbt = commitResult.commitPsbt;
@@ -165,7 +165,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         setCommitTxid(result.txId);
         setCommitSigned(true);
         setCommitBroadcasted(true);
-        setMintIndex(commitResult.mintIndex);
+        setSessionId(commitResult.sessionId);
         setMintStep("reveal");
       } else {
         throw new Error("No transaction ID returned from signing");
@@ -189,7 +189,7 @@ export const useMintStore = create<MintState>((set, get) => ({
       ordinalsAddress,
       paymentAddress,
       walletProvider,
-      mintIndex,
+      sessionId,
     } = get();
 
     if (
@@ -218,7 +218,7 @@ export const useMintStore = create<MintState>((set, get) => ({
         ordinalsPublicKey: walletProvider.publicKey,
         paymentAddress,
         paymentPublicKey: walletProvider.paymentPublicKey,
-        mintIndex: mintIndex as number,
+        sessionId: sessionId as string,
       };
 
       const prepareResult = await internalApi.post<{

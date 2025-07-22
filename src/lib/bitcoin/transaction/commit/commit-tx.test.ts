@@ -3,10 +3,12 @@ import { prepareCommitTx } from "./commit-tx";
 import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
 import { mempoolClient } from "../../../external/mempool-client";
+import { ordiscanClient } from "../../../external/ordiscan-client";
 import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
 
 // Mock the modules
 vi.mock("../../../external/mempool-client");
+vi.mock("../../../external/ordiscan-client");
 vi.mock("../../inscriptions/generate-inscription-data");
 
 vi.mock("@/env", () => ({
@@ -48,6 +50,21 @@ describe("prepareCommitTx (integration)", () => {
       },
     },
   ];
+
+  const mockOrdiscanUtxos = [
+    {
+      outpoint: "a".repeat(64) + ":0",
+      value: 100_000,
+      runes: [],
+      inscriptions: [],
+    },
+    {
+      outpoint: "c".repeat(64) + ":1",
+      value: 200_000,
+      runes: [],
+      inscriptions: [],
+    },
+  ];
   const mockInscriptionData = {
     taprootRevealScript: new Uint8Array([1, 2, 3]),
     taprootRevealValue: 50_000,
@@ -63,6 +80,9 @@ describe("prepareCommitTx (integration)", () => {
     vi.clearAllMocks();
     // Set up mocks using vi.mocked
     mempoolClient.getUTXOs = vi.fn().mockResolvedValue(mockUtxos);
+    ordiscanClient.getAddressUTXOs = vi
+      .fn()
+      .mockResolvedValue(mockOrdiscanUtxos);
     vi.mocked(generateInscriptionData).mockResolvedValue(mockInscriptionData);
     process.env.ORACLE_COMPRESSED_PUBLIC_KEY = "02" + "b".repeat(64);
   });
@@ -72,7 +92,7 @@ describe("prepareCommitTx (integration)", () => {
       "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh", // valid bech32 address
       "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
       "02".padEnd(66, "0"),
-      1,
+      "1",
       { feeRate: 10 },
     );
     expect(result.commitPsbt).toBeTypeOf("string");
@@ -106,13 +126,21 @@ describe("prepareCommitTx (integration)", () => {
         },
       },
     ]);
-    
+    ordiscanClient.getAddressUTXOs = vi.fn().mockResolvedValue([
+      {
+        outpoint: "a".repeat(64) + ":0",
+        value: 1000,
+        runes: [],
+        inscriptions: [],
+      },
+    ]);
+
     await expect(
       prepareCommitTx(
         "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
         "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
         "02".padEnd(66, "0"),
-        1,
+        "1",
       ),
     ).rejects.toThrow(InsufficientFundsError);
   });
@@ -123,7 +151,7 @@ describe("prepareCommitTx (integration)", () => {
         "3QJmV3qfvL9SuYo34YihAf3sRCW3qSinyC",
         "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
         "02".padEnd(66, "0"),
-        1,
+        "1",
       ),
     ).rejects.toThrow(InvalidParametersError);
   });

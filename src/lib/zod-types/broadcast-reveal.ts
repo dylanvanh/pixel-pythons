@@ -9,4 +9,3 @@ export const BroadcastRevealRequestSchema = z.object({
 export type BroadcastRevealRequest = z.infer<
   typeof BroadcastRevealRequestSchema
 >;
-

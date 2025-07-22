@@ -3,7 +3,7 @@ import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareCommitRequestSchema } from "@/lib/zod-types/commit-types";
 import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
-import { getAndIncrementMintIndex } from "@/lib/supabase/get-and-increment-mint-index";
+import crypto from "crypto";
 
 export const POST = withErrorHandling(async (request: Request) => {
   const body = await request.json();
@@ -20,7 +20,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     paymentPublicKey,
   } = validatedBody.data;
 
-  const mintIndex = await getAndIncrementMintIndex(ordinalsAddress);
+  const sessionId = crypto.randomBytes(16).toString('hex');
 
   const fastFeeRate = await mempoolClient.getFastestFee();
 
@@ -30,7 +30,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsPublicKey,
     paymentPublicKey,
     feeRate: fastFeeRate,
-    mintIndex,
+    sessionId,
   });
 
   // Prepare the commit transaction
@@ -38,7 +38,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     paymentAddress,
     ordinalsAddress,
     ordinalsPublicKey,
-    mintIndex,
+    sessionId,
     {
       feeRate: fastFeeRate,
       paymentPublicKey,
@@ -59,6 +59,6 @@ export const POST = withErrorHandling(async (request: Request) => {
     taprootRevealValue: commitResult.taprootRevealValue,
     revealFee: commitResult.revealFee,
     postage: commitResult.postage,
-    mintIndex,
+    sessionId,
   });
 });

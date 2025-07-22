@@ -1,10 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
-import {
-  generateCompositeImageBuffer,
-} from "./generate-image";
-import {
-  deterministicallySelectBaseTraitIndicesAndCreateHash,
-} from "./utils";
+import { generateCompositeImageBuffer } from "./generate-image";
+import { deterministicallySelectBaseTraitIndicesAndCreateHash } from "./utils";
 import type { TraitFileOptions } from "./types";
 import * as canvasMock from "@napi-rs/canvas";
 
@@ -24,7 +20,8 @@ vi.mock("fs/promises", () => ({
       if (dirPath.includes("background")) return ["bg1.png", "bg2.png"];
       if (dirPath.includes("body")) return ["body1.png", "body2.png"];
       if (dirPath.includes("mouth")) return ["mouth1.png"];
-      if (dirPath.includes("eyes")) return ["eyes1.png", "eyes2.png", "eyes3.png"];
+      if (dirPath.includes("eyes"))
+        return ["eyes1.png", "eyes2.png", "eyes3.png"];
       if (dirPath.includes("clothes")) return ["clothes1.png", "N/A.png"];
       if (dirPath.includes("arms")) return ["arm_left.png", "arm_right.png"];
       if (dirPath.includes("hat")) return ["hat1.png"];
@@ -37,7 +34,7 @@ describe("Image Generation Utilities", () => {
   describe("deterministicallySelectBaseTraitIndicesAndCreateHash", () => {
     it("should return indices within bounds and a hash", () => {
       const address = "0xtest";
-      const mintIndex = 1;
+      const sessionId = "1234567890abcdef1234567890abcdef";
       const traitFileOptions: TraitFileOptions = [
         ["bg1.png", "bg2.png"],
         ["body1.png", "body2.png", "body3.png"],
@@ -45,7 +42,7 @@ describe("Image Generation Utilities", () => {
 
       const result = deterministicallySelectBaseTraitIndicesAndCreateHash(
         address,
-        mintIndex,
+        sessionId,
         traitFileOptions,
       );
 
@@ -58,7 +55,7 @@ describe("Image Generation Utilities", () => {
 
     it("should return same indices and hash for same inputs", () => {
       const address = "0xtest";
-      const mintIndex = 1;
+      const sessionId = "1234567890abcdef1234567890abcdef";
       const traitFileOptions: TraitFileOptions = [
         ["bg1.png", "bg2.png"],
         ["body1.png"],
@@ -66,12 +63,12 @@ describe("Image Generation Utilities", () => {
 
       const result1 = deterministicallySelectBaseTraitIndicesAndCreateHash(
         address,
-        mintIndex,
+        sessionId,
         traitFileOptions,
       );
       const result2 = deterministicallySelectBaseTraitIndicesAndCreateHash(
         address,
-        mintIndex,
+        sessionId,
         traitFileOptions,
       );
 
@@ -83,21 +80,23 @@ describe("Image Generation Utilities", () => {
   describe("generateCompositeImageBuffer", () => {
     it("should return the same image buffer when called twice with the same inputs", async () => {
       const address = "0xtestSameBuffer";
-      const mintIndex = 7;
+      const sessionId = "abcdef1234567890abcdef1234567890";
 
       vi.clearAllMocks();
 
-      const buffer1 = await generateCompositeImageBuffer(address, mintIndex);
-      const buffer2 = await generateCompositeImageBuffer(address, mintIndex);
+      const buffer1 = await generateCompositeImageBuffer(address, sessionId);
+      const buffer2 = await generateCompositeImageBuffer(address, sessionId);
 
       expect(Buffer.isBuffer(buffer1)).toBe(true);
       expect(Buffer.isBuffer(buffer2)).toBe(true);
       expect(buffer1).toEqual(buffer2);
-      
+
       const mockedCreateCanvas = vi.mocked(canvasMock.createCanvas);
       expect(mockedCreateCanvas).toHaveBeenCalled();
       if (mockedCreateCanvas.mock.results[0]?.value) {
-        expect(mockedCreateCanvas.mock.results[0].value.toBuffer).toHaveBeenCalled();
+        expect(
+          mockedCreateCanvas.mock.results[0].value.toBuffer,
+        ).toHaveBeenCalled();
       } else {
         expect(mockedCreateCanvas).toHaveBeenCalled();
       }

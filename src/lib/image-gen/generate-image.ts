@@ -1,10 +1,7 @@
 import { createCanvas, SKRSContext2D } from "@napi-rs/canvas";
 import path from "path";
 
-import {
-  IMAGE_SIZE,
-  TRAIT_LAYERS,
-} from "./config";
+import { IMAGE_SIZE, TRAIT_LAYERS } from "./config";
 import {
   getSortedTraitImageFilenamesFromDirectory,
   deterministicallySelectBaseTraitIndicesAndCreateHash,
@@ -13,31 +10,35 @@ import {
 
 export async function generateCompositeImageBuffer(
   address: string,
-  mintIndex: number,
+  sessionId: string,
 ): Promise<Buffer> {
   const canvas = createCanvas(IMAGE_SIZE, IMAGE_SIZE);
   const ctx = canvas.getContext("2d") as SKRSContext2D;
 
   const allTraitFileOptions = await Promise.all(
-    TRAIT_LAYERS.map((layer) => getSortedTraitImageFilenamesFromDirectory(layer.dir)),
+    TRAIT_LAYERS.map((layer) =>
+      getSortedTraitImageFilenamesFromDirectory(layer.dir),
+    ),
   );
 
-  const { indices: selectedTraitIndices, hash } = deterministicallySelectBaseTraitIndicesAndCreateHash(
-    address,
-    mintIndex,
-    allTraitFileOptions,
-  );
+  const { indices: selectedTraitIndices, hash } =
+    deterministicallySelectBaseTraitIndicesAndCreateHash(
+      address,
+      sessionId,
+      allTraitFileOptions,
+    );
 
   for (let i = 0; i < TRAIT_LAYERS.length; i++) {
     const layerConfig = TRAIT_LAYERS[i];
     const currentLayerTraitFiles = allTraitFileOptions[i];
-    
+
     if (!currentLayerTraitFiles || currentLayerTraitFiles.length === 0) {
-        continue;
+      continue;
     }
-    
+
     const traitIndexForThisLayer = selectedTraitIndices[i];
-    const selectedTraitFilename = currentLayerTraitFiles[traitIndexForThisLayer];
+    const selectedTraitFilename =
+      currentLayerTraitFiles[traitIndexForThisLayer];
 
     let includeThisLayer = true;
     if (layerConfig.probability < 1) {
@@ -47,7 +48,8 @@ export async function generateCompositeImageBuffer(
 
       // 1. Select a unique byte from the hash for this layer's inclusion decision.
       //    Using a different part of the hash than for trait variant selection ensures these choices are independent.
-      const decisionByte = hash[(hash.length - 1 - i + hash.length) % hash.length];
+      const decisionByte =
+        hash[(hash.length - 1 - i + hash.length) % hash.length];
 
       // 2. Convert this byte into a "chance" value (0.0 to 1.0), like a deterministic dice roll.
       const appearanceChance = decisionByte / 255;
@@ -58,7 +60,7 @@ export async function generateCompositeImageBuffer(
     }
 
     if (includeThisLayer) {
-      if (selectedTraitFilename) { 
+      if (selectedTraitFilename) {
         await drawTraitImageFileOntoCanvasContext(
           ctx,
           path.join(process.cwd(), layerConfig.dir, selectedTraitFilename),

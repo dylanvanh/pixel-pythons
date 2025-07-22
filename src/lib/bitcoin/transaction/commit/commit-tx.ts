@@ -18,13 +18,11 @@ export type CommitPsbtResult = {
   inscriptionScript: Uint8Array;
 };
 
-
-
 export async function prepareCommitTx(
   userPaymentAddress: string,
   userOrdinalsAddress: string,
   ordinalsPublicKey: string,
-  mintIndex: number,
+  sessionId: string,
   options?: {
     feeRate?: number;
     paymentPublicKey?: string;
@@ -44,7 +42,7 @@ export async function prepareCommitTx(
 
   const inscriptionData = await generateInscriptionData(
     userOrdinalsAddress,
-    mintIndex,
+    sessionId,
     ordinalsPublicKey,
     feeRate,
   );

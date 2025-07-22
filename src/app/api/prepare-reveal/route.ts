@@ -19,7 +19,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsPublicKey,
     paymentAddress,
     paymentPublicKey,
-    mintIndex,
+    sessionId,
   } = validatedBody.data;
 
   const fastFeeRate = await mempoolClient.getFastestFee();
@@ -30,13 +30,13 @@ export const POST = withErrorHandling(async (request: Request) => {
     ordinalsPublicKey: ordinalsPublicKey.substring(0, 10) + "...",
     paymentAddress,
     paymentPublicKey: paymentPublicKey,
-    mintIndex,
+    sessionId,
     feeRate: fastFeeRate,
   });
 
   const inscriptionData = await generateInscriptionData(
     ordinalsAddress,
-    mintIndex,
+    sessionId,
     ordinalsPublicKey,
     fastFeeRate,
   );

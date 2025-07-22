@@ -35,12 +35,12 @@ export type MintState = {
   walletProvider: LaserEyesWallet | null;
   paymentAddress: string;
   ordinalsAddress: string;
-  mintIndex?: number;
+  sessionId?: string;
 
   // Actions
   setMintStep: (step: MintStep) => void;
   setIsLoading: (loading: boolean) => void;
-  setMintIndex: (mintIndex: number) => void;
+  setSessionId: (sessionId: string) => void;
   setCommitTxid: (txid: string) => void;
   setRevealTxid: (txid: string) => void;
   setCommitSigned: (signed: boolean) => void;

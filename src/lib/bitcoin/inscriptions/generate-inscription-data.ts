@@ -23,7 +23,7 @@ export type InscriptionDataParams = {
  */
 export async function generateInscriptionData(
   ordinalsAddress: string,
-  mintIndex: number,
+  sessionId: string,
   ordinalsPublicKey: string,
   feeRateInput?: number,
 ): Promise<InscriptionDataParams> {
@@ -32,7 +32,7 @@ export async function generateInscriptionData(
 
   const imageBuffer = await generateCompositeImageBuffer(
     ordinalsAddress,
-    mintIndex,
+    sessionId,
   );
 
   const contentType = Buffer.from("image/png");
