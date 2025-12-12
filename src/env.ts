@@ -29,4 +29,5 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_PARENT_INSCRIPTION_ID,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
 });

@@ -17,9 +17,6 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Copy environment variables for build time
-COPY .env* ./
-
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
 # Uncomment the following line in case you want to disable telemetry during the build.
@@ -27,6 +24,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 # Disable ESLint during Docker build
 ENV NEXT_DISABLE_ESLINT=1
+
+# Skip environment validation during build
+ENV SKIP_ENV_VALIDATION=1
 
 RUN corepack enable pnpm && pnpm run build
 
