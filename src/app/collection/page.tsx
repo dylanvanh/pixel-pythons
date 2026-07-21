@@ -12,7 +12,7 @@ async function fetchParentInscriptionText(
   inscriptionId: string,
 ): Promise<string> {
   if (!inscriptionId) throw new Error("No inscription ID provided");
-  const url = `https://ordiscan.com/content/${inscriptionId}`;
+  const url = `https://ordinals.com/content/${inscriptionId}`;
   const res = await axios.get(url);
   return res.data;
 }
