@@ -120,37 +120,11 @@ pnpm start
 - **`/src/components/`** - Reusable React components and UI elements
 - **`/src/app/`** - Next.js App Router pages and API endpoints
 
-### Key Features
-
-**Bitcoin Integration**:
-
-- PSBT (Partially Signed Bitcoin Transaction) construction
-- Multi-signature transaction support
-- UTXO management with inscription/rune filtering
-- Network fee estimation and optimization
-
-**Ordinal Generation**:
-
-- Trait-based pixel art generation
-- Rarity algorithm implementation
-- Server-side canvas rendering for consistency
-- Metadata generation and storage
-
 ## API Endpoints
 
 - `POST /api/prepare-commit` - Prepare Bitcoin commit transaction
 - `POST /api/prepare-reveal` - Prepare inscription reveal transaction
 - `POST /api/broadcast-reveal` - Broadcast reveal transaction to network
-- `GET /api/mint-index` - Get current mint progress
-
-## Environment Variables
-
-See `.env.example` for all required configuration. Key variables:
-
-- **Bitcoin Network**: Mempool API and Ordiscan integration
-- **Wallet Configuration**: Oracle wallet for transaction signing
-- **Database**: Supabase connection and authentication
-- **App Configuration**: Base URLs and inscription parameters
 
 ## License
 

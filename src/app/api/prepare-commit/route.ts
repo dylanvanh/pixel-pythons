@@ -2,7 +2,8 @@ import { prepareCommitTx } from "@/lib/bitcoin/transaction/commit/commit-tx";
 import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareCommitRequestSchema } from "@/lib/zod-types/commit-types";
-import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
+import { AppError } from "@/lib/error/error-types/app-error";
+import { ErrorCode } from "@/lib/error/codes/error-codes";
 import crypto from "crypto";
 
 export const POST = withErrorHandling(async (request: Request) => {
@@ -10,7 +11,7 @@ export const POST = withErrorHandling(async (request: Request) => {
 
   const validatedBody = PrepareCommitRequestSchema.safeParse(body);
   if (!validatedBody.success) {
-    throw new InvalidParametersError(validatedBody.error.message);
+    throw new AppError(validatedBody.error.message, ErrorCode.INVALID_PARAMETERS);
   }
 
   const {
@@ -45,20 +46,8 @@ export const POST = withErrorHandling(async (request: Request) => {
     },
   );
 
-  // Return the commit transaction data AND necessary reveal parameters
   return Response.json({
     commitPsbt: commitResult.commitPsbt,
-    commitFee: commitResult.commitFee,
-    controlBlock: Buffer.from(commitResult.controlBlock).toString("hex"),
-    inscriptionScript: Buffer.from(commitResult.inscriptionScript).toString(
-      "hex",
-    ),
-    taprootRevealScript: Buffer.from(commitResult.taprootRevealScript).toString(
-      "hex",
-    ),
-    taprootRevealValue: commitResult.taprootRevealValue,
-    revealFee: commitResult.revealFee,
-    postage: commitResult.postage,
     sessionId,
   });
 });

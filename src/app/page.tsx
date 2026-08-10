@@ -7,14 +7,12 @@ export const revalidate = 5;
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen relative">
-      <main className="flex-1 flex flex-col items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full mx-auto">
-          <WalletInfo className="mb-4" />
-          <MintForm />
-          <RecentMints />
-        </div>
-      </main>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full mx-auto">
+        <WalletInfo className="mb-4" />
+        <MintForm />
+        <RecentMints />
+      </div>
+    </main>
   );
 }

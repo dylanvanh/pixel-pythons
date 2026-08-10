@@ -1,56 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { prepareCommitTx } from "./commit-tx";
-import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
-import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
-import { mempoolClient } from "../../../external/mempool-client";
+import { ErrorCode } from "@/lib/error/codes/error-codes";
 import { ordiscanClient } from "../../../external/ordiscan-client";
 import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
 
 // Mock the modules
-vi.mock("../../../external/mempool-client");
 vi.mock("../../../external/ordiscan-client");
 vi.mock("../../inscriptions/generate-inscription-data");
 
 vi.mock("@/env", () => ({
   env: {
-    MEMPOOL_URL: "mock",
     ORDISCAN_URL: "mock",
     ORDISCAN_API_KEY: "mock",
-    ORACLE_PRIVATE_KEY_WIF: "mock",
-    ORACLE_COMPRESSED_PUBLIC_KEY: "mock",
-    ORACLE_TAPROOT_ADDRESS: "mock",
-    SUPABASE_URL: "mock",
-    SUPABASE_SERVICE_ROLE_KEY: "mock",
     NEXT_PUBLIC_PARENT_INSCRIPTION_ID: "mock",
   },
 }));
 
 describe("prepareCommitTx (integration)", () => {
-  const mockUtxos = [
-    {
-      txid: "a".repeat(64),
-      vout: 0,
-      value: 100_000,
-      status: {
-        confirmed: true,
-        block_height: 1,
-        block_hash: "b".repeat(64),
-        block_time: 1234567890,
-      },
-    },
-    {
-      txid: "c".repeat(64),
-      vout: 1,
-      value: 200_000,
-      status: {
-        confirmed: true,
-        block_height: 2,
-        block_hash: "d".repeat(64),
-        block_time: 1234567891,
-      },
-    },
-  ];
-
   const mockOrdiscanUtxos = [
     {
       outpoint: "a".repeat(64) + ":0",
@@ -79,12 +45,10 @@ describe("prepareCommitTx (integration)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Set up mocks using vi.mocked
-    mempoolClient.getUTXOs = vi.fn().mockResolvedValue(mockUtxos);
     ordiscanClient.getAddressUTXOs = vi
       .fn()
       .mockResolvedValue(mockOrdiscanUtxos);
     vi.mocked(generateInscriptionData).mockResolvedValue(mockInscriptionData);
-    process.env.ORACLE_COMPRESSED_PUBLIC_KEY = "02" + "b".repeat(64);
   });
 
   it("returns a valid CommitPsbtResult with sufficient funds", async () => {
@@ -96,36 +60,9 @@ describe("prepareCommitTx (integration)", () => {
       { feeRate: 10 },
     );
     expect(result.commitPsbt).toBeTypeOf("string");
-    expect(result.commitFee).toBeGreaterThan(0);
-    expect(result.taprootRevealScript).toEqual(
-      mockInscriptionData.taprootRevealScript,
-    );
-    expect(result.taprootRevealValue).toBe(
-      mockInscriptionData.taprootRevealValue,
-    );
-    expect(result.revealFee).toBe(mockInscriptionData.revealFee);
-    expect(result.postage).toBe(mockInscriptionData.postage);
-    expect(result.controlBlock).toEqual(mockInscriptionData.controlBlock);
-    expect(result.inscriptionScript).toEqual(
-      mockInscriptionData.inscriptionScript,
-    );
   });
 
   it("throws InsufficientFundsError if not enough sats", async () => {
-    // Override the mock for this test
-    mempoolClient.getUTXOs = vi.fn().mockResolvedValue([
-      {
-        txid: "a".repeat(64),
-        vout: 0,
-        value: 1000,
-        status: {
-          confirmed: true,
-          block_height: 1,
-          block_hash: "b".repeat(64),
-          block_time: 1234567890,
-        },
-      },
-    ]);
     ordiscanClient.getAddressUTXOs = vi.fn().mockResolvedValue([
       {
         outpoint: "a".repeat(64) + ":0",
@@ -142,7 +79,7 @@ describe("prepareCommitTx (integration)", () => {
         "02".padEnd(66, "0"),
         "1",
       ),
-    ).rejects.toThrow(InsufficientFundsError);
+    ).rejects.toMatchObject({ code: ErrorCode.INSUFFICIENT_FUNDS });
   });
 
   it("throws InvalidParametersError for P2SH address without public key", async () => {
@@ -153,6 +90,6 @@ describe("prepareCommitTx (integration)", () => {
         "02".padEnd(66, "0"),
         "1",
       ),
-    ).rejects.toThrow(InvalidParametersError);
+    ).rejects.toMatchObject({ code: ErrorCode.INVALID_PARAMETERS });
   });
 });

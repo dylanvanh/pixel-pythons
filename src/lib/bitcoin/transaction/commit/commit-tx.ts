@@ -2,20 +2,12 @@ import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import { DUST_LIMIT, DEFAULT_FEE_RATE } from "../../../constants";
 import { estimateCommitFee } from "../../inscriptions/inscription-utils";
 import { generateInscriptionData } from "../../inscriptions/generate-inscription-data";
-import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
-import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
-import { UserWalletInfo } from "../../inscriptions/types";
+import { AppError } from "@/lib/error/error-types/app-error";
+import { ErrorCode } from "@/lib/error/codes/error-codes";
 import { getCleanPaymentUtxos } from "../../utxo/utxo-fetcher";
 
 export type CommitPsbtResult = {
   commitPsbt: string;
-  commitFee: number;
-  taprootRevealScript: Uint8Array;
-  taprootRevealValue: number;
-  revealFee: number;
-  postage: number;
-  controlBlock: Uint8Array;
-  inscriptionScript: Uint8Array;
 };
 
 export async function prepareCommitTx(
@@ -30,14 +22,6 @@ export async function prepareCommitTx(
 ): Promise<CommitPsbtResult> {
   const userUtxos = await getCleanPaymentUtxos(userPaymentAddress);
 
-  const userWallet: UserWalletInfo = {
-    paymentAddress: userPaymentAddress,
-    ordinalsAddress: userOrdinalsAddress,
-    ordinalsPublicKey: ordinalsPublicKey,
-    paymentPublicKey: options?.paymentPublicKey,
-    utxos: userUtxos,
-  };
-
   const feeRate = options?.feeRate || DEFAULT_FEE_RATE;
 
   const inscriptionData = await generateInscriptionData(
@@ -47,49 +31,46 @@ export async function prepareCommitTx(
     feeRate,
   );
 
-  const commitFee = estimateCommitFee(userWallet.utxos.length, feeRate);
+  const commitFee = estimateCommitFee(userUtxos.length, feeRate);
   const totalRequired = commitFee + inscriptionData.taprootRevealValue + 400;
 
-  const userTotal = userWallet.utxos
+  const userTotal = userUtxos
     .filter((utxo) => Math.floor(utxo.value) > DUST_LIMIT)
     .reduce((sum, utxo) => sum + Math.floor(utxo.value), 0);
 
   if (userTotal < totalRequired) {
-    throw new InsufficientFundsError(
+    throw new AppError(
       `Insufficient funds. Required: ${totalRequired} sats, Available: ${userTotal} sats for payment address: ${userPaymentAddress}`,
+      ErrorCode.INSUFFICIENT_FUNDS,
     );
   }
 
   const commitPsbt = new bitcoin.Psbt();
+  const paymentScript = bitcoin.address.toOutputScript(userPaymentAddress);
+  let redeemScript: Uint8Array | undefined;
 
-  for (const utxo of userWallet.utxos) {
-    if (userWallet.paymentAddress.startsWith("3")) {
-      if (!userWallet.paymentPublicKey) {
-        throw new InvalidParametersError(
-          "Payment public key is required for P2SH (starts with '3') addresses",
-        );
-      }
-      const publicKeyBuffer = Buffer.from(userWallet.paymentPublicKey, "hex");
-      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer });
-      commitPsbt.addInput({
-        hash: utxo.txid,
-        index: utxo.vout,
-        witnessUtxo: {
-          script: bitcoin.address.toOutputScript(userWallet.paymentAddress),
-          value: BigInt(Math.floor(utxo.value)),
-        },
-        redeemScript: p2wpkh.output,
-      });
-    } else {
-      commitPsbt.addInput({
-        hash: utxo.txid,
-        index: utxo.vout,
-        witnessUtxo: {
-          script: bitcoin.address.toOutputScript(userWallet.paymentAddress),
-          value: BigInt(Math.floor(utxo.value)),
-        },
-      });
+  if (userPaymentAddress.startsWith("3")) {
+    if (!options?.paymentPublicKey) {
+      throw new AppError(
+        "Payment public key is required for P2SH (starts with '3') addresses",
+        ErrorCode.INVALID_PARAMETERS,
+      );
     }
+    redeemScript = bitcoin.payments.p2wpkh({
+      pubkey: Buffer.from(options.paymentPublicKey, "hex"),
+    }).output;
+  }
+
+  for (const utxo of userUtxos) {
+    commitPsbt.addInput({
+      hash: utxo.txid,
+      index: utxo.vout,
+      witnessUtxo: {
+        script: paymentScript,
+        value: BigInt(Math.floor(utxo.value)),
+      },
+      ...(redeemScript && { redeemScript }),
+    });
   }
 
   commitPsbt.addOutput({
@@ -100,19 +81,12 @@ export async function prepareCommitTx(
   const changeAmount = userTotal - totalRequired;
   if (changeAmount > DUST_LIMIT) {
     commitPsbt.addOutput({
-      address: userWallet.paymentAddress,
+      address: userPaymentAddress,
       value: BigInt(changeAmount),
     });
   }
 
   return {
     commitPsbt: commitPsbt.toBase64(),
-    commitFee,
-    taprootRevealScript: inscriptionData.taprootRevealScript,
-    taprootRevealValue: inscriptionData.taprootRevealValue,
-    revealFee: inscriptionData.revealFee,
-    postage: inscriptionData.postage,
-    controlBlock: inscriptionData.controlBlock,
-    inscriptionScript: inscriptionData.inscriptionScript,
   };
 }

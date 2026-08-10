@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Transactions } from "./types";
+import type { Transactions } from "@/store/mint-store";
 
 interface CommitStepProps {
   isLoading: boolean;
@@ -30,13 +29,13 @@ export function CommitStep({
         </div>
       </div>
       <div className="flex space-x-2">
-        <Button
+        <button
           onClick={signCommitTransaction}
           disabled={isLoading || !paymentAddress}
-          className="flex-1 bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
+          className="inline-flex flex-1 items-center justify-center bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200 disabled:pointer-events-none disabled:opacity-50"
         >
           {isLoading ? "Signing..." : "Sign"}
-        </Button>
+        </button>
         {transactions.commitSigned &&
           transactions.commitTxid &&
           !isLoading && (
@@ -49,13 +48,13 @@ export function CommitStep({
               View TX
             </a>
           )}
-        <Button
+        <button
           onClick={resetMintProcess}
           disabled={isLoading}
-          className="bg-white text-black border-4 border-black hover:bg-gray-100"
+          className="inline-flex items-center justify-center bg-white text-black border-4 border-black px-4 py-2 hover:bg-gray-100 disabled:pointer-events-none disabled:opacity-50"
         >
           Reset
-        </Button>
+        </button>
       </div>
     </div>
   );

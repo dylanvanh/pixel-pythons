@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import { useState } from "react";
 
 export function OrdinalImage({
@@ -17,14 +16,13 @@ export function OrdinalImage({
   return (
     <div className="w-full h-full flex items-center justify-center bg-white relative">
       {!error ? (
-        <Image
+        <img
           src={src}
           alt={alt}
           width={400}
           height={400}
           className="w-full h-full object-contain"
           loading="lazy"
-          unoptimized
           style={{ imageRendering: "pixelated" }}
           onError={() => setError(true)}
           onLoad={() => setLoading(false)}

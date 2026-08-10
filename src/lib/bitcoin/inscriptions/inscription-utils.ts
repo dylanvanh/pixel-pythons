@@ -34,7 +34,7 @@ export function createInscriptionScript(
     ? (() => {
         const [hex, indexStr] = parentInscriptionId.split("i");
         // parse txid and reverse bytes to get raw binary
-        const txidBytes = hexToBytes(hex).reverse();
+        const txidBytes = Buffer.from(hex, "hex").reverse();
         // little-endian index
         const indexNum = parseInt(indexStr, 10) || 0;
         const indexBuffer = Buffer.alloc(4);
@@ -94,72 +94,4 @@ export function estimateRevealFee(
 
   const estimatedVsize = baseSize + inputSize + witnessDiscount + outputSize;
   return Math.ceil(estimatedVsize * feeRate);
-}
-
-/**
- * Calculate expected txid from PSBT
- * NOTE: THIS WILL ONLY WORK FOR ADDRESSES THAT USE *WITNESS*
- */
-export function calculateExpectedTxId(psbt: bitcoin.Psbt): string {
-  try {
-    // Create a transaction with the inputs and outputs from the PSBT
-    const tx = new bitcoin.Transaction();
-
-    // Set version
-    tx.version = psbt.version;
-
-    // Add inputs
-    psbt.txInputs.forEach((input) => {
-      tx.addInput(
-        Uint8Array.from(Buffer.from(input.hash)),
-        input.index,
-        input.sequence,
-      );
-    });
-
-    // Add outputs
-    psbt.txOutputs.forEach((output) => {
-      tx.addOutput(output.script, output.value);
-    });
-
-    // Set locktime
-    tx.locktime = psbt.locktime;
-
-    // Generate txid
-    return tx.getId();
-  } catch (error) {
-    console.error("Error calculating expected txid:", error);
-    return "0000000000000000000000000000000000000000000000000000000000000000";
-  }
-}
-
-/**
- * Extract raw transaction hex from a PSBT string
- */
-export function extractTransactionHexFromPsbt(psbtBase64: string): string {
-  try {
-    const psbt = bitcoin.Psbt.fromBase64(psbtBase64);
-
-    try {
-      const tx = psbt.extractTransaction();
-      return tx.toHex();
-    } catch (e) {
-      console.warn("Failed to extract transaction from PSBT:", e);
-      throw e;
-    }
-  } catch (error) {
-    console.error("Error extracting transaction from PSBT:", error);
-    throw error;
-  }
-}
-
-/**
- * Convert hex string to bytes
- */
-export function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
 }

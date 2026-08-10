@@ -1,10 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { SKRSContext2D, Image, loadImage } from "@napi-rs/canvas";
-
-import type { TraitFileOptions, TraitSelectionResults } from "./types";
-import { IMAGE_SIZE } from "./config";
 
 export async function getSortedTraitImageFilenamesFromDirectory(
   dir: string,
@@ -20,8 +16,8 @@ export async function getSortedTraitImageFilenamesFromDirectory(
 export function deterministicallySelectBaseTraitIndicesAndCreateHash(
   address: string,
   sessionId: string,
-  traitFileOptions: TraitFileOptions,
-): TraitSelectionResults {
+  traitFileOptions: string[][],
+): { indices: number[]; hash: Buffer } {
   const uniqueString = `${address}:${sessionId}`;
   const hash = crypto.createHash("sha256").update(uniqueString).digest();
   const indices = traitFileOptions.map((options, layerIdx) => {
@@ -30,12 +26,3 @@ export function deterministicallySelectBaseTraitIndicesAndCreateHash(
   });
   return { indices, hash };
 }
-
-export async function drawTraitImageFileOntoCanvasContext(
-  ctx: SKRSContext2D,
-  filePath: string,
-): Promise<void> {
-  const img: Image = await loadImage(filePath);
-  ctx.drawImage(img, 0, 0, IMAGE_SIZE, IMAGE_SIZE);
-}
-

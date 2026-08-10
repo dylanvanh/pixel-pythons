@@ -22,9 +22,6 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Disable ESLint during Docker build
-ENV NEXT_DISABLE_ESLINT=1
-
 # Skip environment validation during build
 ENV SKIP_ENV_VALIDATION=1
 

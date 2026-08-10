@@ -1,19 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { useMintStore } from "@/store/mint-store";
+import { useMint } from "@/store/mint-store";
 import {
   useLaserEyes,
-  UNISAT,
   XVERSE,
-  OYL,
-  MAGIC_EDEN,
-  OKX,
-  ORANGE,
   LEATHER,
-  PHANTOM,
-  WIZZ,
 } from "@omnisat/lasereyes";
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
 import { CommitStep } from "./CommitStep";
@@ -23,18 +15,16 @@ import { SuccessStep } from "./SuccessStep";
 import { WalletSelector } from "./WalletSelector";
 
 export function MintForm() {
-  const mintStep = useMintStore((state) => state.mintStep);
-  const isLoading = useMintStore((state) => state.isLoading);
-  const transactions = useMintStore((state) => state.transactions);
-  const startMintProcess = useMintStore((state) => state.startMintProcess);
-  const signCommitTransaction = useMintStore(
-    (state) => state.signCommitTransaction,
-  );
-  const signRevealTransaction = useMintStore(
-    (state) => state.signRevealTransaction,
-  );
-  const resetMintProcess = useMintStore((state) => state.resetMintProcess);
-  const setWalletProvider = useMintStore((state) => state.setWalletProvider);
+  const {
+    mintStep,
+    isLoading,
+    transactions,
+    startMintProcess,
+    signCommitTransaction,
+    signRevealTransaction,
+    resetMintProcess,
+    setWalletProvider,
+  } = useMint();
 
   // State for wallet dialog/drawer
   const [walletSelectorOpen, setWalletSelectorOpen] = useState(false);
@@ -46,91 +36,30 @@ export function MintForm() {
     publicKey,
     paymentPublicKey,
     connect,
-    hasUnisat,
     hasXverse,
-    hasOyl,
-    hasMagicEden,
-    hasOkx,
     hasLeather,
-    hasPhantom,
-    hasWizz,
-    hasOrange,
   } = useLaserEyes();
 
-  // Wallet status mapping
   const walletStatusMap = {
-    [UNISAT]: hasUnisat,
     [XVERSE]: hasXverse,
-    [OYL]: hasOyl,
-    [MAGIC_EDEN]: hasMagicEden,
-    [OKX]: hasOkx,
-    [ORANGE]: hasOrange,
     [LEATHER]: hasLeather,
-    [PHANTOM]: hasPhantom,
-    [WIZZ]: hasWizz,
-  };
-
-  const formatWalletName = (name: string) => {
-    return name
-      .replace(/[-_]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
   };
 
   const handleConnectWallet = async (walletName: string) => {
     setWalletSelectorOpen(false);
-    await connect(
-      walletName as
-        | typeof UNISAT
-        | typeof XVERSE
-        | typeof OYL
-        | typeof MAGIC_EDEN
-        | typeof OKX
-        | typeof ORANGE
-        | typeof LEATHER
-        | typeof PHANTOM
-        | typeof WIZZ,
-    );
+    await connect(walletName as typeof XVERSE | typeof LEATHER);
   };
 
   const signPsbtWrapper = useCallback(
     async (
-      options:
-        | {
-            tx: string;
-            finalize?: boolean;
-            broadcast?: boolean;
-            inputsToSign: { index: number; address: string }[];
-          }
-        | string,
-      finalize?: boolean,
-      broadcast?: boolean,
-    ): Promise<{ psbt?: string; txId?: string }> => {
-      if (typeof options === "string") {
-        const response = await laserEyesSignPsbt(options, finalize, broadcast);
-        return {
-          psbt: response?.signedPsbtBase64,
-          txId: response?.txId,
-        };
-      }
-
-      // When options is passed as an object, ensure finalize and broadcast are forwarded
-      const objOptions = options as {
+      options: {
         tx: string;
         finalize?: boolean;
         broadcast?: boolean;
         inputsToSign: { index: number; address: string }[];
-      };
-
-      // Make sure we pass through the finalize and broadcast flags that were provided
-      const response = await laserEyesSignPsbt({
-        ...objOptions,
-        finalize:
-          objOptions.finalize !== undefined ? objOptions.finalize : finalize,
-        broadcast:
-          objOptions.broadcast !== undefined ? objOptions.broadcast : broadcast,
-      });
+      },
+    ): Promise<{ psbt?: string; txId?: string }> => {
+      const response = await laserEyesSignPsbt(options);
 
       return {
         psbt: response?.signedPsbtHex
@@ -179,7 +108,6 @@ export function MintForm() {
               onOpenChange={setWalletSelectorOpen}
               walletStatusMap={walletStatusMap}
               handleConnectWallet={handleConnectWallet}
-              formatWalletName={formatWalletName}
             />
           </>
         );
@@ -217,19 +145,19 @@ export function MintForm() {
   };
 
   return (
-    <Card className="w-full max-w-md border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0)] transition duration-200">
+    <div className="bg-card text-card-foreground flex w-full max-w-md flex-col gap-6 rounded-xl border-4 border-black py-6 shadow-[8px_8px_0px_0px_rgba(0,0,0)] transition duration-200">
       {mintStep === "ready" ? (
-        <CardContent className="p-6">{renderStepContent()}</CardContent>
+        <div className="p-6">{renderStepContent()}</div>
       ) : (
         <>
-          <CardHeader className="border-b-4 border-black bg-blue-400">
-            <CardTitle className="text-center text-2xl font-bold">
+          <div className="grid auto-rows-min items-start gap-1.5 border-b-4 border-black bg-blue-400 px-6">
+            <div className="text-center text-2xl font-bold leading-none">
               Mint Your Ordinal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">{renderStepContent()}</CardContent>
+            </div>
+          </div>
+          <div className="p-6">{renderStepContent()}</div>
         </>
       )}
-    </Card>
+    </div>
   );
 }

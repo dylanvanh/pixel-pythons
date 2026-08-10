@@ -1,17 +1,14 @@
-import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
+import { bitcoin, ECPair } from "@/lib/bitcoin/core/bitcoin-config";
 import * as secp256k1 from "@bitcoinerlab/secp256k1";
 import { DUST_LIMIT, getOracleTaprootAddress } from "../../../constants";
 import { mempoolClient, UTXO } from "../../../external/mempool-client";
-import { calculateExpectedTxId } from "../../inscriptions/inscription-utils";
-import { signParentP2TRInput } from "../../oracle/oracle";
-import { InsufficientFundsError } from "@/lib/error/error-types/insufficient-funds-error";
+import { AppError } from "@/lib/error/error-types/app-error";
+import { ErrorCode } from "@/lib/error/codes/error-codes";
 import { getAvailablePaymentUtxos } from "../../utxo/utxo-fetcher";
 import { env } from "@/env";
 
 export type RevealPsbtResult = {
   revealPsbt: string;
-  revealFee: number;
-  expectedInscriptionId: string;
   inputSigningMap: { index: number; address: string }[];
 };
 
@@ -152,65 +149,45 @@ export async function prepareRevealTx(
   // Calculate required fee contribution AFTER adding inscription output value
   const requiredFeeContribution = revealParams.revealFee;
 
-  // Filter out dust UTXOs
-  const availablePaymentUtxos = paymentUtxos.filter(
-    (utxo) => utxo.value > DUST_LIMIT,
-  );
-  const totalAvailablePaymentValue = availablePaymentUtxos.reduce(
-    (sum, utxo) => sum + utxo.value,
-    0,
-  );
+  let accumulatedPaymentValue = 0;
+  const selectedUtxos = [];
+  for (const utxo of paymentUtxos) {
+    if (utxo.value <= DUST_LIMIT) continue;
+    selectedUtxos.push(utxo);
+    accumulatedPaymentValue += utxo.value;
+    if (accumulatedPaymentValue >= requiredFeeContribution) break;
+  }
 
-  if (totalAvailablePaymentValue < requiredFeeContribution) {
-    throw new InsufficientFundsError(
-      `Insufficient funds to cover reveal fee. Required: ${requiredFeeContribution} sats, Available: ${totalAvailablePaymentValue} sats`,
+  if (accumulatedPaymentValue < requiredFeeContribution) {
+    throw new AppError(
+      `Insufficient funds to cover reveal fee. Required: ${requiredFeeContribution} sats, Available: ${accumulatedPaymentValue} sats`,
+      ErrorCode.INSUFFICIENT_FUNDS,
     );
   }
 
-  // Select UTXOs until the fee is covered
-  let accumulatedPaymentValue = 0;
-  const selectedUtxos = [];
-  for (const utxo of availablePaymentUtxos) {
-    selectedUtxos.push(utxo);
-    accumulatedPaymentValue += utxo.value;
-    if (accumulatedPaymentValue >= requiredFeeContribution) {
-      break;
+  const paymentScript = bitcoin.address.toOutputScript(userPaymentAddress);
+  let redeemScript: Uint8Array | undefined;
+  if (userPaymentAddress.startsWith("3")) {
+    if (!revealParams.paymentPublicKey) {
+      throw new Error("Payment public key is required for P2SH addresses");
     }
+    redeemScript = bitcoin.payments.p2wpkh({
+      pubkey: Buffer.from(revealParams.paymentPublicKey, "hex"),
+    }).output;
   }
 
-  // Add selected payment UTXOs as inputs
   for (const selectedUtxo of selectedUtxos) {
     const paymentInputIndex = inputIndex;
-    const paymentScript = bitcoin.address.toOutputScript(userPaymentAddress);
     const paymentInputValue = Math.floor(selectedUtxo.value);
-
-    if (userPaymentAddress.startsWith("3")) {
-      // P2SH-P2WPKH
-      if (!revealParams.paymentPublicKey) {
-        throw new Error("Payment public key is required for P2SH addresses");
-      }
-      const publicKeyBuffer = Buffer.from(revealParams.paymentPublicKey, "hex");
-      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: publicKeyBuffer });
-      revealPsbt.addInput({
-        hash: selectedUtxo.txid,
-        index: selectedUtxo.vout,
-        witnessUtxo: {
-          script: paymentScript,
-          value: BigInt(paymentInputValue),
-        },
-        redeemScript: p2wpkh.output,
-      });
-    } else {
-      // P2TR or P2WPKH
-      revealPsbt.addInput({
-        hash: selectedUtxo.txid,
-        index: selectedUtxo.vout,
-        witnessUtxo: {
-          script: paymentScript,
-          value: BigInt(paymentInputValue),
-        },
-      });
-    }
+    revealPsbt.addInput({
+      hash: selectedUtxo.txid,
+      index: selectedUtxo.vout,
+      witnessUtxo: {
+        script: paymentScript,
+        value: BigInt(paymentInputValue),
+      },
+      ...(redeemScript && { redeemScript }),
+    });
     inputSigningMap.push({
       index: paymentInputIndex,
       address: userPaymentAddress,
@@ -248,18 +225,12 @@ export async function prepareRevealTx(
     totalOutputValue += changeAmount;
   }
 
-  const finalActualFee = totalInputValue - totalOutputValue;
-
-  const expectedTxid = calculateExpectedTxId(revealPsbt);
-
-  // ORACLE
-  signParentP2TRInput(revealPsbt);
+  const oracleKeyPair = ECPair.fromWIF(env.ORACLE_PRIVATE_KEY_WIF);
+  const tapTweak = bitcoin.crypto.taggedHash("TapTweak", xOnlyPubkey);
+  revealPsbt.signInput(0, oracleKeyPair.tweak(tapTweak));
 
   return {
     revealPsbt: revealPsbt.toBase64(),
-    revealFee: finalActualFee,
-    // The new inscription is always the first output (index 0)
-    expectedInscriptionId: `${expectedTxid}i0`,
     inputSigningMap,
   };
 }

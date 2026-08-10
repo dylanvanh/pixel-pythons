@@ -3,14 +3,15 @@ import { prepareRevealTx } from "@/lib/bitcoin/transaction/reveal/reveal-tx";
 import { mempoolClient } from "@/lib/external/mempool-client";
 import { withErrorHandling } from "@/lib/error/middleware/error-middleware";
 import { PrepareRevealRequestSchema } from "@/lib/zod-types/reveal-types";
-import { InvalidParametersError } from "@/lib/error/error-types/invalid-parameters-error";
+import { AppError } from "@/lib/error/error-types/app-error";
+import { ErrorCode } from "@/lib/error/codes/error-codes";
 
 export const POST = withErrorHandling(async (request: Request) => {
   const body = await request.json();
 
   const validatedBody = PrepareRevealRequestSchema.safeParse(body);
   if (!validatedBody.success) {
-    throw new InvalidParametersError(validatedBody.error.message);
+    throw new AppError(validatedBody.error.message, ErrorCode.INVALID_PARAMETERS);
   }
 
   const {
@@ -62,11 +63,8 @@ export const POST = withErrorHandling(async (request: Request) => {
 
   console.log("Reveal result:", revealResult);
 
-  // Return the reveal transaction data
   return Response.json({
     revealPsbt: revealResult.revealPsbt,
-    revealFee: revealResult.revealFee,
-    expectedInscriptionId: revealResult.expectedInscriptionId,
     inputSigningMap: revealResult.inputSigningMap,
   });
 });

@@ -1,5 +1,3 @@
-import React from "react";
-
 interface ParentInscriptionProps {
   inscriptionId: string;
   text: string | null;
@@ -18,35 +16,7 @@ export function ParentInscription({
       rel="noopener noreferrer"
       className="border-4 border-yellow-500 aspect-square w-48 h-48 shadow-lg bg-gradient-to-br from-yellow-100 via-amber-50 to-yellow-200 flex flex-col items-center justify-center relative cursor-pointer overflow-hidden"
     >
-      <div className="absolute inset-0 opacity-20">
-        <svg
-          width="100%"
-          height="100%"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 20 0 L 0 0 0 20"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-              />
-            </pattern>
-          </defs>
-          <rect
-            width="100%"
-            height="100%"
-            fill="url(#grid)"
-            className="text-yellow-600"
-          />
-        </svg>
-      </div>
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(202,138,4,0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(202,138,4,0.2)_1px,transparent_1px)] bg-[size:20px_20px]" />
       <div className="w-full h-full flex items-center justify-center relative backdrop-blur-[1px]">
         <span className="text-lg font-semibold text-center break-words px-2">
           {hasError
@@ -59,4 +29,4 @@ export function ParentInscription({
       </span>
     </a>
   );
-} 
+}

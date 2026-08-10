@@ -1,121 +1,76 @@
 import { env } from "@/env";
-import ApiClient from "./api-client";
+
+const MEMPOOL_API_URL = `${env.MEMPOOL_URL}/api`;
+const REQUEST_TIMEOUT_MS = 10_000;
+const UTXO_REFRESH_ATTEMPTS = 5;
+const UTXO_REFRESH_DELAY_MS = 100;
 
 export type UTXO = {
   txid: string;
   vout: number;
-  status: {
-    confirmed: boolean;
-    block_height: number;
-    block_hash: string;
-    block_time: number;
-  };
   value: number;
 };
-export type RecommendedFees = {
-  fastestFee: number;
-  halfHourFee: number;
-  hourFee: number;
-  economyFee: number;
-  minimumFee: number;
-};
-type TransactionPrevout = {
-  scriptpubkey: string;
-  scriptpubkey_asm: string;
-  scriptpubkey_type: string;
-  scriptpubkey_address: string;
-  value: number;
-};
-type TransactionVin = {
-  txid: string;
-  vout: number;
-  prevout: TransactionPrevout;
-  scriptsig: string;
-  scriptsig_asm: string;
-  witness?: string[];
-  is_coinbase: boolean;
-  sequence: number;
-  inner_redeemscript_asm?: string;
-};
-type TransactionVout = {
-  scriptpubkey: string;
-  scriptpubkey_asm: string;
-  scriptpubkey_type: string;
-  scriptpubkey_address?: string;
-  value: number;
-};
+
 export type Transaction = {
-  txid: string;
-  version: number;
-  locktime: number;
-  vin: TransactionVin[];
-  vout: TransactionVout[];
-  size: number;
-  weight: number;
-  sigops: number;
-  fee: number;
-  status: {
-    confirmed: boolean;
-    block_height: number;
-    block_hash: string;
-    block_time: number;
-  };
+  vin: {
+    txid: string;
+    vout: number;
+    prevout: {
+      scriptpubkey_type: string;
+      scriptpubkey_address: string;
+      value: number;
+    };
+  }[];
+  vout: {
+    scriptpubkey: string;
+    value: number;
+  }[];
 };
 
-export class MempoolClient extends ApiClient {
-  constructor() {
-    super(MempoolClient.getBaseUrl());
-  }
-
-  private static getBaseUrl(): string {
-    return `${env.MEMPOOL_URL}/api`;
-  }
-
-  async getFastestFee(): Promise<number> {
-    const recommendedFees = await this.getRecommendedFees();
-    return recommendedFees.fastestFee;
-  }
-
-  async getTransaction(txid: string): Promise<Transaction> {
-    return this.api.get(`/tx/${txid}`).then((response) => response.data);
-  }
-
-  async getAddress(address: string) {
-    return this.api
-      .get(`/address/${address}`)
-      .then((response) => response.data);
-  }
-
-  async getRecommendedFees(): Promise<RecommendedFees> {
-    return this.api
-      .get("/v1/fees/recommended")
-      .then((response) => response.data);
-  }
-
-  async getUTXOs(address: string): Promise<UTXO[]> {
-    // This loop and delay are a workaround for potential stale data from the Mempool API.
-    // Occasionally, the API might return UTXOs that have already been spent.
-    // Retrying the request multiple times with a small delay increases the likelihood of getting the latest data.
-    let lastResponseData: UTXO[] = [];
-    for (let i = 0; i < 5; i++) {
-      const response = await this.api.get(
-        `/address/${address}/utxo?_=${Date.now()}`,
-      );
-      lastResponseData = response.data;
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-    return lastResponseData;
-  }
-
-  async broadcastTransaction(rawTx: string): Promise<string> {
-    return this.api
-      .post("/tx", rawTx, {
-        headers: {
-          "Content-Type": "text/plain",
-        },
-      })
-      .then((response) => response.data);
-  }
+async function getFastestFee(): Promise<number> {
+  const fees = await getJson<{ fastestFee: number }>("/v1/fees/recommended");
+  return fees.fastestFee;
 }
 
-export const mempoolClient = new MempoolClient();
+async function getTransaction(txid: string): Promise<Transaction> {
+  return getJson(`/tx/${txid}`);
+}
+
+async function getUTXOs(address: string): Promise<UTXO[]> {
+  let latestUtxos: UTXO[] = [];
+  for (let attempt = 0; attempt < UTXO_REFRESH_ATTEMPTS; attempt++) {
+    latestUtxos = await getJson(`/address/${address}/utxo?_=${Date.now()}`);
+    await new Promise((resolve) => setTimeout(resolve, UTXO_REFRESH_DELAY_MS));
+  }
+  return latestUtxos;
+}
+
+async function broadcastTransaction(rawTransaction: string): Promise<string> {
+  const response = await fetch(`${MEMPOOL_API_URL}/tx`, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain" },
+    body: rawTransaction,
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`Mempool request failed: ${response.status}`);
+  }
+  return response.text();
+}
+
+async function getJson<ResponseData>(path: string): Promise<ResponseData> {
+  const response = await fetch(`${MEMPOOL_API_URL}${path}`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+  if (!response.ok) {
+    throw new Error(`Mempool request failed: ${response.status}`);
+  }
+  return response.json() as Promise<ResponseData>;
+}
+
+export const mempoolClient = {
+  getFastestFee,
+  getTransaction,
+  getUTXOs,
+  broadcastTransaction,
+};

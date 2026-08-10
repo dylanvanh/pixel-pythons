@@ -1,5 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { Transactions } from "./types";
+import type { Transactions } from "@/store/mint-store";
 
 interface SuccessStepProps {
   transactions: Transactions;
@@ -44,12 +43,12 @@ export function SuccessStep({
         </div>
       </div>
 
-      <Button
+      <button
         onClick={resetMintProcess}
-        className="w-full bg-black text-white border-4 border-black font-bold text-lg hover:bg-white hover:text-black transition duration-200"
+        className="inline-flex w-full items-center justify-center bg-black text-white border-4 border-black font-bold text-lg px-4 py-2 hover:bg-white hover:text-black transition duration-200"
       >
         Mint Another
-      </Button>
+      </button>
     </div>
   );
 }

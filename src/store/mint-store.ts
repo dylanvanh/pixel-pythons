@@ -1,126 +1,67 @@
-import { create } from "zustand";
-import { internalApi } from "@/lib/internal-api-client";
+import { useState } from "react";
+import { postInternalApi } from "@/lib/internal-api-client";
 import { handleError } from "@/lib/error/handlers/error-handler";
 import { bitcoin } from "@/lib/bitcoin/core/bitcoin-config";
-import { LaserEyesWallet, MintState, MintStep } from "./store-types";
 import { PrepareCommitRequest } from "@/lib/zod-types/commit-types";
 import { PrepareRevealRequest } from "@/lib/zod-types/reveal-types";
 import { BroadcastRevealRequest } from "@/lib/zod-types/broadcast-reveal";
 
-export const useMintStore = create<MintState>((set, get) => ({
-  mintStep: "ready",
-  isLoading: false,
-  transactions: {
-    commitTxid: "",
-    revealTxid: "",
-    commitSigned: false,
-    revealSigned: false,
-    commitBroadcasted: false,
-    revealBroadcasted: false,
-  },
+type MintStep = "ready" | "commit" | "reveal" | "success";
 
-  // Wallet and address states
-  walletProvider: null,
-  paymentAddress: "",
-  ordinalsAddress: "",
-  sessionId: undefined,
+export type Transactions = {
+  commitTxid: string;
+  revealTxid: string;
+  commitSigned: boolean;
+  revealSigned: boolean;
+  commitBroadcasted: boolean;
+};
 
-  // Actions
-  setMintStep: (step: MintStep) => set({ mintStep: step }),
-  setIsLoading: (loading: boolean) => set({ isLoading: loading }),
-  setSessionId: (sessionId: string) => set({ sessionId }),
-  setCommitTxid: (txid: string) =>
-    set((state) => ({
-      transactions: { ...state.transactions, commitTxid: txid },
-    })),
-  setRevealTxid: (txid: string) =>
-    set((state) => ({
-      transactions: { ...state.transactions, revealTxid: txid },
-    })),
-  setCommitSigned: (signed: boolean) =>
-    set((state) => ({
-      transactions: { ...state.transactions, commitSigned: signed },
-    })),
-  setRevealSigned: (signed: boolean) =>
-    set((state) => ({
-      transactions: { ...state.transactions, revealSigned: signed },
-    })),
-  setCommitBroadcasted: (broadcasted: boolean) =>
-    set((state) => ({
-      transactions: { ...state.transactions, commitBroadcasted: broadcasted },
-    })),
-  setRevealBroadcasted: (broadcasted: boolean) =>
-    set((state) => ({
-      transactions: { ...state.transactions, revealBroadcasted: broadcasted },
-    })),
-  setWalletProvider: (provider: LaserEyesWallet | null) =>
-    set(() => {
-      if (!provider) {
-        return {
-          walletProvider: null,
-          paymentAddress: "",
-          ordinalsAddress: "",
-        };
-      }
+type LaserEyesWallet = {
+  ordinalAddress: string;
+  paymentAddress: string;
+  publicKey?: string;
+  paymentPublicKey?: string;
+  signPsbt: (options: {
+    tx: string;
+    finalize?: boolean;
+    broadcast?: boolean;
+    inputsToSign: { index: number; address: string }[];
+  }) => Promise<{ psbt?: string; txId?: string }>;
+};
 
-      return {
-        walletProvider: provider,
-        paymentAddress: provider.paymentAddress,
-        ordinalsAddress: provider.ordinalAddress,
-      };
-    }),
-  setAddresses: (paymentAddr: string, ordinalsAddr: string) =>
-    set({
-      paymentAddress: paymentAddr,
-      ordinalsAddress: ordinalsAddr,
-    }),
-  resetMintProcess: () =>
-    set({
-      mintStep: "ready",
-      transactions: {
-        commitTxid: "",
-        revealTxid: "",
-        commitSigned: false,
-        revealSigned: false,
-        commitBroadcasted: false,
-        revealBroadcasted: false,
-      },
-    }),
+const INITIAL_TRANSACTIONS: Transactions = {
+  commitTxid: "",
+  revealTxid: "",
+  commitSigned: false,
+  revealSigned: false,
+  commitBroadcasted: false,
+};
 
-  // Process flow
-  startMintProcess: async () => {
-    const { setMintStep, setIsLoading } = get();
+export function useMint() {
+  const [mintStep, setMintStep] = useState<MintStep>("ready");
+  const [isLoading, setIsLoading] = useState(false);
+  const [transactions, setTransactions] = useState(INITIAL_TRANSACTIONS);
+  const [walletProvider, setWalletProvider] =
+    useState<LaserEyesWallet | null>(null);
+  const [sessionId, setSessionId] = useState<string>();
 
-    setIsLoading(true);
-    setMintStep("commit");
-    setIsLoading(false);
-  },
+  const resetMintProcess = () => {
+    setMintStep("ready");
+    setTransactions(INITIAL_TRANSACTIONS);
+  };
 
-  signCommitTransaction: async () => {
-    const {
-      setMintStep,
-      setIsLoading,
-      setCommitSigned,
-      setCommitTxid,
-      setCommitBroadcasted,
-      setSessionId,
-      paymentAddress,
-      ordinalsAddress,
-      walletProvider,
-    } = get();
+  const startMintProcess = () => setMintStep("commit");
 
-    if (!walletProvider || !paymentAddress || !ordinalsAddress) {
+  const signCommitTransaction = async () => {
+    if (!walletProvider) {
       console.error("Wallet provider not connected or addresses not available");
       return;
     }
 
-    if (!walletProvider.publicKey || !walletProvider.paymentPublicKey) {
-      console.error("Public keys not available from wallet provider");
-      handleError(
-        new Error("Public keys not available"),
-        "Missing Public Keys",
-      );
-      setIsLoading(false);
+    const { paymentAddress, ordinalAddress, publicKey, paymentPublicKey } =
+      walletProvider;
+    if (!publicKey || !paymentPublicKey) {
+      handleError(new Error("Public keys not available"), "Missing Public Keys");
       return;
     }
 
@@ -129,161 +70,135 @@ export const useMintStore = create<MintState>((set, get) => ({
     try {
       const payload: PrepareCommitRequest = {
         paymentAddress,
-        ordinalsAddress,
-        ordinalsPublicKey: walletProvider.publicKey,
-        paymentPublicKey: walletProvider.paymentPublicKey,
+        ordinalsAddress: ordinalAddress,
+        ordinalsPublicKey: publicKey,
+        paymentPublicKey,
       };
-
-      const commitResult = await internalApi.post<{
+      const commitResult = await postInternalApi<{
         commitPsbt: string;
-        commitFee: number;
-        controlBlock: string;
-        inscriptionScript: string;
-        taprootRevealScript: string;
-        taprootRevealValue: number;
-        revealFee: number;
-        postage: number;
         sessionId: string;
       }>("/api/prepare-commit", payload);
-
-      const psbt = commitResult.commitPsbt;
-
-      const parsedPsbt = bitcoin.Psbt.fromBase64(psbt);
-      const numberOfInputs = parsedPsbt.data.inputs.length;
-
+      const parsedPsbt = bitcoin.Psbt.fromBase64(commitResult.commitPsbt);
+      const inputsToSign = Array.from(
+        { length: parsedPsbt.data.inputs.length },
+        (_, index) => ({ index, address: paymentAddress }),
+      );
       const result = await walletProvider.signPsbt({
-        tx: psbt,
-        inputsToSign: Array.from({ length: numberOfInputs }).map((_, i) => ({
-          index: i,
-          address: paymentAddress,
-        })),
+        tx: commitResult.commitPsbt,
+        inputsToSign,
         finalize: true,
         broadcast: true,
       });
 
-      if (result.txId) {
-        setCommitTxid(result.txId);
-        setCommitSigned(true);
-        setCommitBroadcasted(true);
-        setSessionId(commitResult.sessionId);
-        setMintStep("reveal");
-      } else {
+      const commitTxid = result.txId;
+      if (!commitTxid) {
         throw new Error("No transaction ID returned from signing");
       }
+
+      setTransactions((currentTransactions) => ({
+        ...currentTransactions,
+        commitTxid,
+        commitSigned: true,
+        commitBroadcasted: true,
+      }));
+      setSessionId(commitResult.sessionId);
+      setMintStep("reveal");
     } catch (error) {
       console.error("Error signing commit transaction:", error);
       handleError(error, "Error signing commit transaction");
     } finally {
       setIsLoading(false);
     }
-  },
+  };
 
-  signRevealTransaction: async () => {
-    const {
-      setMintStep,
-      setIsLoading,
-      setRevealSigned,
-      setRevealTxid,
-      setRevealBroadcasted,
-      transactions,
-      ordinalsAddress,
-      paymentAddress,
-      walletProvider,
-      sessionId,
-    } = get();
-
+  const signRevealTransaction = async () => {
     if (
       !walletProvider ||
-      !ordinalsAddress ||
-      !paymentAddress ||
       !walletProvider.publicKey ||
-      !walletProvider.paymentPublicKey
+      !walletProvider.paymentPublicKey ||
+      !sessionId
     ) {
-      console.error("Wallet provider or necessary details missing for reveal.");
       handleError(
         new Error("Wallet or address details missing."),
         "Configuration Error",
       );
-      setIsLoading(false);
       return;
     }
 
     setIsLoading(true);
-    let signedPsbtBase64: string | undefined;
 
     try {
       const preparePayload: PrepareRevealRequest = {
         commitTxid: transactions.commitTxid,
-        ordinalsAddress,
+        ordinalsAddress: walletProvider.ordinalAddress,
         ordinalsPublicKey: walletProvider.publicKey,
-        paymentAddress,
+        paymentAddress: walletProvider.paymentAddress,
         paymentPublicKey: walletProvider.paymentPublicKey,
-        sessionId: sessionId as string,
+        sessionId,
       };
-
-      const prepareResult = await internalApi.post<{
+      const prepareResult = await postInternalApi<{
         revealPsbt: string;
         inputSigningMap?: { index: number; address: string }[];
       }>("/api/prepare-reveal", preparePayload);
-
-      if (!prepareResult.revealPsbt) {
-        throw new Error("Failed to prepare reveal PSBT from API");
-      }
-      const revealPsbt = prepareResult.revealPsbt;
-
-      const availableAddresses = [ordinalsAddress, paymentAddress].filter(
-        Boolean,
-      );
+      const availableAddresses = [
+        walletProvider.ordinalAddress,
+        walletProvider.paymentAddress,
+      ];
       const inputsToSign = prepareResult.inputSigningMap
-        ? prepareResult.inputSigningMap.filter(
-            (input: { index: number; address: string }) =>
-              availableAddresses.includes(input.address),
+        ? prepareResult.inputSigningMap.filter((input) =>
+            availableAddresses.includes(input.address),
           )
-        : [{ index: 0, address: ordinalsAddress }];
+        : [{ index: 0, address: walletProvider.ordinalAddress }];
 
       if (inputsToSign.length === 0) {
-        throw new Error(
-          `None of your available addresses (${availableAddresses.join(", ")}) match the required signing addresses in the input map.`,
-        );
+        throw new Error("No wallet address matches the required signing inputs");
       }
+
       const signResult = await walletProvider.signPsbt({
-        tx: revealPsbt,
-        inputsToSign: inputsToSign,
+        tx: prepareResult.revealPsbt,
+        inputsToSign,
         finalize: true,
         broadcast: false,
       });
-
-      signedPsbtBase64 = signResult.psbt;
-
-      if (!signedPsbtBase64) {
-        throw new Error(
-          "Wallet did not return signed PSBT data after signing.",
-        );
+      if (!signResult.psbt) {
+        throw new Error("Wallet did not return signed PSBT data after signing");
       }
-      setRevealSigned(true);
 
+      setTransactions((currentTransactions) => ({
+        ...currentTransactions,
+        revealSigned: true,
+      }));
       const broadcastPayload: BroadcastRevealRequest = {
-        signedPsbtBase64: signedPsbtBase64,
+        signedPsbtBase64: signResult.psbt,
         commitTxid: transactions.commitTxid,
-        ordinalsAddress: ordinalsAddress,
+        ordinalsAddress: walletProvider.ordinalAddress,
       };
-
-      const broadcastResponse = await internalApi.post<{
+      const broadcastResponse = await postInternalApi<{
         revealTxid: string;
-        inscriptionId: string;
       }>("/api/broadcast-reveal", broadcastPayload);
 
-      setRevealTxid(broadcastResponse.revealTxid);
-      setRevealBroadcasted(true);
+      setTransactions((currentTransactions) => ({
+        ...currentTransactions,
+        revealTxid: broadcastResponse.revealTxid,
+      }));
       setMintStep("success");
     } catch (error) {
       console.error("Error during reveal signing or backend broadcast:", error);
-      setRevealBroadcasted(false);
-      setRevealSigned(get().transactions.revealSigned);
       setMintStep("reveal");
       handleError(error, "Failed to finalize reveal transaction");
     } finally {
       setIsLoading(false);
     }
-  },
-}));
+  };
+
+  return {
+    mintStep,
+    isLoading,
+    transactions,
+    startMintProcess,
+    signCommitTransaction,
+    signRevealTransaction,
+    resetMintProcess,
+    setWalletProvider,
+  };
+}

@@ -1,9 +1,5 @@
 import { ordiscanClient } from "../../external/ordiscan-client";
-import {
-  isUtxoClean,
-  extractSpentUtxoOutpoints,
-  fetchTransactionWithRetry,
-} from "./utxo-utils";
+import { mempoolClient } from "../../external/mempool-client";
 
 export async function getCleanPaymentUtxos(
   userPaymentAddress: string,
@@ -30,8 +26,7 @@ export async function getCleanPaymentUtxos(
           return false;
         }
 
-        // Only include clean UTXOs (no inscriptions or runes)
-        return isUtxoClean(utxo);
+        return utxo.inscriptions.length === 0 && utxo.runes.length === 0;
       })
       .map((utxo) => {
         const [txid, voutStr] = utxo.outpoint.split(":");
@@ -40,12 +35,6 @@ export async function getCleanPaymentUtxos(
           txid,
           vout,
           value: utxo.value,
-          status: {
-            confirmed: true,
-            block_height: 0,
-            block_hash: "",
-            block_time: 0,
-          },
         };
       });
 
@@ -82,12 +71,34 @@ export async function getAvailablePaymentUtxos(
     throw new Error(`Failed to retrieve commit transaction ${commitTxid}`);
   }
 
-  const spentUtxoOutpoints = extractSpentUtxoOutpoints(commitTx);
+  const spentUtxoOutpoints = new Set(
+    commitTx.vin.map((input) => `${input.txid}:${input.vout}`),
+  );
 
-  return await getCleanPaymentUtxos(
+  return getCleanPaymentUtxos(
     userPaymentAddress,
     spentUtxoOutpoints,
     maxRetries,
     delayMs,
   );
+}
+
+async function fetchTransactionWithRetry(
+  txid: string,
+  maxRetries: number,
+  delayMs: number,
+) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await mempoolClient.getTransaction(txid);
+    } catch (error) {
+      if (attempt === maxRetries - 1) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to fetch transaction ${txid} after ${maxRetries} attempts: ${message}`,
+        );
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
 }
