@@ -1,0 +1,56 @@
+{
+  "background": [
+    "blue.png",
+    "dark-red.png",
+    "green.png",
+    "light-red.png",
+    "purple.png",
+    "yellow.png"
+  ],
+  "clothes": [
+    "boa-black.png",
+    "boa-blue.png",
+    "bowtie.png",
+    "cape.png",
+    "medal.png",
+    "scarf-red.png"
+  ],
+  "body": ["black.png", "gray.png", "green.png", "yellow.png"],
+  "mouth": ["cigarette.png", "dot.png", "lollipop.png", "red.png", "turquoise.png", "yellow.png"],
+  "hat": [
+    "backwards-hat.png",
+    "banana.png",
+    "birthday.png",
+    "chef.png",
+    "cowboy.png",
+    "crown.png",
+    "flower.png",
+    "graduation.png",
+    "pineapple.png",
+    "santa.png",
+    "sombrero.png",
+    "tophat.png",
+    "traffic-cone.png",
+    "wizar.png"
+  ],
+  "arms": [
+    "arms.png",
+    "lollipop-1.png",
+    "lollipop-2.png",
+    "purple-lightsaber.png",
+    "red-lightsaber.png"
+  ],
+  "eyes": [
+    "black.png",
+    "cinema.png",
+    "glasses.png",
+    "green.png",
+    "monocle.png",
+    "purple.png",
+    "red.png",
+    "shades.png",
+    "urquoise.png",
+    "vr-goggles.png",
+    "yellow.png"
+  ]
+}

@@ -1,6 +1,0 @@
-allowBuilds:
-  cbor-extract: true
-  esbuild: true
-  secp256k1: true
-  sharp: true
-  unrs-resolver: true
