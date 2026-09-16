@@ -1,0 +1,45 @@
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -100px;
+  background: white;
+  padding: 16px;
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+.chain-nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 16px;
+  background: #f6f7f1;
+  border-bottom: 3px solid #171a16;
+  font:
+    700 12px/1.5 Arial,
+    sans-serif;
+}
+
+.chain-nav a {
+  color: #171a16;
+  padding: 6px 14px;
+  border: 2px solid transparent;
+  text-decoration: none;
+}
+
+.chain-nav a[aria-current] {
+  background: #b9ef69;
+  border-color: #171a16;
+}
+
+.chain-nav a:hover {
+  text-decoration: underline;
+}
+
+.chain-nav a:focus-visible {
+  outline: 3px solid #171a16;
+  outline-offset: 2px;
+}

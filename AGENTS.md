@@ -1,0 +1,21 @@
+# Pixel Pythons
+
+- Use ASD-STE100 Simplified Technical English with the user.
+- Read applicable `CONTEXT.md` and `ARCHITECTURE.md` before structural changes.
+- This original Bitcoin repository is the canonical home of the single TanStack Start app. Keep its Git history and remote.
+- Use the Ponytail skill. Prefer one implementation and the smallest complete change.
+- Bun 1.3.14 is the package manager. Keep only `bun.lock`. Run `vp install` before work.
+- Use Vite+, TanStack Start, React, TypeScript, and Cloudflare Workers. Vite+ supplies Oxlint, Oxfmt, and Vitest.
+- Run `vp check`, `vp test run`, and `vp build` for application changes.
+- Run `vp run local:test` for Robinhood mint flow changes. It uses local Anvil only.
+- Run `vp run test:contracts` and `vp run check:contracts` for contract changes.
+- For TanStack work, load the matching installed intent skill with `bunx @tanstack/intent load <use>`.
+- Keep Bitcoin secrets in local `.dev.vars` or Cloudflare secrets. Read them only from server modules. Never put private values in VITE variables or client bundles.
+- Use server functions for database reads from loaders. Loaders also run in the browser.
+- Preserve Bitcoin's original 52-trait catalog and pixel output. New shared PNGs must not enter that catalog without an explicit decision.
+- Test PNG encoding in the Worker runtime and test commit/reveal consistency after renderer changes.
+- Keep runnable checks for non-trivial logic, especially signing, routing, and artwork selection.
+- Do not import local artwork authoring scripts or review images from the old Robinhood checkout.
+- Never commit, push, deploy, or broadcast public transactions without explicit permission.
+- Use conventional commit subjects under 72 characters, without a body.
+- Keep agent rules here. Do not add nested `AGENTS.md` files.
