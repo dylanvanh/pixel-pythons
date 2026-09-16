@@ -1,5 +1,5 @@
 import { DisclaimerModal } from "@/features/bitcoin/components/DisclaimerModal";
-import { AlertTriangle, Github } from "lucide-react";
+import { AlertTriangle, CodeXml } from "lucide-react";
 
 export function Footer() {
   return (
@@ -21,7 +21,7 @@ export function Footer() {
               className="text-xs font-bold bg-white text-black px-2 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0)] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-1"
               aria-label="GitHub"
             >
-              <Github size={12} />
+              <CodeXml size={12} />
               <span>GitHub</span>
             </a>
           </div>
